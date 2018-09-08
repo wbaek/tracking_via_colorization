@@ -1,6 +1,8 @@
 # Tracking via Colorization
 [![KakaoBrain](https://img.shields.io/badge/kakao-brain-ffcd00.svg)](http://kakaobrain.com/)
 [![tensorflow](https://img.shields.io/badge/tensorflow-1.10-ed6c20.svg)](https://www.tensorflow.org/)
+[![CodeFactor](https://www.codefactor.io/repository/github/wbaek/tracking_via_colorization/badge)](https://www.codefactor.io/repository/github/wbaek/tracking_via_colorization)
+
 
 ## Introduction
 

@@ -1,0 +1,17 @@
+natsort
+xmltodict
+numpy
+imageio
+sklearn
+scipy
+
+opencv-python
+opencv-contrib-python
+tensorflow
+tensorpack
+
+pytest
+pytest-cov
+pytest-datafiles
+pylint
+coverage

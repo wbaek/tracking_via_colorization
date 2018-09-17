@@ -36,7 +36,7 @@ class Config():
         self.filename = filename
 
         with open(filename, 'r') as f:
-            self.conf = yaml.load(f)
+            self.conf = yaml.safe_load(f.read())
         Config._instance = self
 
     def __str__(self):

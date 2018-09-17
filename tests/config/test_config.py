@@ -20,7 +20,7 @@ def test_singletone():
     os.path.join(FIXTURE_DIR, 'configs', 'basic.yaml')
 )
 def test_singletone2(datafiles):
-    filenames = [f for f in datafiles.listdir()]
+    filenames = [str(f) for f in datafiles.listdir()]
     _ = Config(filenames[0])
     with pytest.raises(Exception) as _:
         _ = Config(filenames[0])
@@ -30,7 +30,7 @@ def test_singletone2(datafiles):
     os.path.join(FIXTURE_DIR, 'configs', 'basic.yaml')
 )
 def test_update_and_dump(datafiles):
-    filenames = [f for f in datafiles.listdir()]
+    filenames = [str(f) for f in datafiles.listdir()]
     config = Config(filenames[0])
 
     assert config['foo']['bar'] == 1

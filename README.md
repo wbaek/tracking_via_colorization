@@ -14,6 +14,15 @@ This TensorFlow implementation is designed with these goals:
 
 ## How to Use
 
+### Train
+
+* cifar10
+```
+python3 bin/train_estimator_cifar10.py --model-dir models/test
+tensorboard --host 0.0.0.0 --port 6006 --logdir models
+
+```
+
 ### Prerequisite
 
 Should install below libraries.

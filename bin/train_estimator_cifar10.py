@@ -7,7 +7,7 @@ import tensorpack.dataflow as df
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
-from tracking_via_colorization.networks.base import Model
+from tracking_via_colorization.networks.classifier import Classifier
 from tracking_via_colorization.networks.resnet_cifar10 import ResNetCifar10
 
 def get_input_fn(name, batch_size=32):
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         'eval': get_input_fn('test', 128)
     }
 
-    model_fn = Model.get('resnet', ResNetCifar10, 'channels_last', log_steps=100)
+    model_fn = Classifier.get('resnet', ResNetCifar10, 'channels_last', log_steps=100)
     config = tf.estimator.RunConfig(
         model_dir=args.model_dir,
         save_summary_steps=10,

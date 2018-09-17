@@ -21,9 +21,9 @@ def test_singletone():
 )
 def test_singletone2(datafiles):
     filenames = [f for f in datafiles.listdir()]
-    config = Config(filenames[0])
-    with pytest.raises(Exception) as e_info:
-        config = Config(filename[0])
+    _ = Config(filenames[0])
+    with pytest.raises(Exception) as _:
+        _ = Config(filenames[0])
     Config.clear()
 
 @pytest.mark.datafiles(

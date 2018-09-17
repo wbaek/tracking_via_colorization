@@ -7,17 +7,17 @@ import yaml
 LOGGER = logging.getLogger(__name__)
 
 class Config():
-    __instance = None
+    _instance = None
 
     @staticmethod
     def get_instance():
-        if Config.__instance is None:
+        if Config._instance is None:
             Config()
-        return Config.__instance
+        return Config._instance
 
     @staticmethod
     def clear():
-        Config.__instance = None
+        Config._instance = None
 
     def dump(self, filename=None):
         dump_string = yaml.dump(self.conf)
@@ -27,7 +27,7 @@ class Config():
         return dump_string
 
     def __init__(self, filename=None):
-        if Config.__instance is not None:
+        if Config._instance is not None:
             raise Exception('This class is a singleton!')
 
         root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,7 +37,7 @@ class Config():
 
         with open(filename, 'r') as f:
             self.conf = yaml.load(f)
-        Config.__instance = self
+        Config._instance = self
 
     def __str__(self):
         return 'filename:%s\nconf:%s' % (self.filename, self.conf)

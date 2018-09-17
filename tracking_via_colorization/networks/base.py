@@ -45,10 +45,9 @@ class Model():
             batch_norm_decay = params.batch_norm_decay
             batch_norm_epsilon = params.batch_norm_epsilon
 
-            learning_rate = params.learning_rate
-            momentum = params.momentum
+            optimizer = params.optimizer
 
-            with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
+            with tf.variable_scope(name, reuse=False):  # tf.AUTO_REUSE):
                 with tf.name_scope('network') as name_scope:
                     model = network_architecture(
                         is_training,
@@ -59,7 +58,8 @@ class Model():
                     logits = model.forward(features, input_data_format=input_data_format)
                     predictions = {
                         'classes': tf.argmax(input=logits, axis=1),
-                        'probabilities': tf.nn.softmax(logits)
+                        'probabilities': tf.nn.softmax(logits),
+                        'logits': logits
                     }
                     metrics = {
                         'accuracy': tf.metrics.accuracy(labels, predictions['classes'])
@@ -70,23 +70,26 @@ class Model():
                     loss = tf.reduce_mean(loss)
                     loss += weight_decay * tf.add_n([tf.nn.l2_loss(v) for v in weights])
                     gradients = tf.gradients(loss, weights)
-                    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, name_scope)
+            if is_training:
+                tf.summary.scalar("accuracy", metrics['accuracy'][1])
 
             with tf.name_scope('optimizer'):
-                optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=momentum)
-                train_op = [
+                operations = [
                     optimizer.apply_gradients(zip(gradients, weights), global_step=tf.train.get_global_step()),
-                    update_ops
+                    tf.get_collection(tf.GraphKeys.UPDATE_OPS, name_scope)  # for batchnorm
                 ]
-                train_op = tf.group(*train_op)
+                train_op = tf.group(*operations)
 
             with tf.name_scope('others'):
                 tensors_to_log = {
-                    'learning_rate': tf.convert_to_tensor(learning_rate, tf.float32),
-                    'loss': loss
+                    'step': tf.train.get_global_step(),
+                    'loss': loss,
+                    'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(logits, labels, k=1), tf.float32))
+
                 }
                 logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=1)
                 train_hooks = [logging_hook]
+                predict_hooks = []
 
             return tf.estimator.EstimatorSpec(
                 mode=mode,
@@ -94,8 +97,9 @@ class Model():
                 loss=loss,
                 train_op=train_op,
                 training_hooks=train_hooks,
-                eval_metric_ops=metrics)
-
+                prediction_hooks=predict_hooks,
+                eval_metric_ops=metrics
+            )
         return _model_fn
 
 
@@ -174,7 +178,7 @@ class ResNet():
 
             x = self._batch_norm(x)
             x = self._relu(x)
-            x = self._conv(x, kernel_size, out_filter, [1, 1, 1, 1])
+            x = self._conv(x, kernel_size, out_filter, 1)
 
             if in_filter != out_filter:
                 pad = (out_filter - in_filter) // 2

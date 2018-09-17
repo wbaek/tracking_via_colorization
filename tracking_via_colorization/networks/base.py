@@ -27,7 +27,7 @@ import tensorflow as tf
 
 class Model():
     @staticmethod
-    def get(name, network_architecture, input_data_format='channels_last'):
+    def get(name, network_architecture, input_data_format='channels_last', log_steps=1):
         def _model_fn(features, labels, mode, params):
             """
             Args:
@@ -87,7 +87,7 @@ class Model():
                     'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(logits, labels, k=1), tf.float32))
 
                 }
-                logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=1)
+                logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=log_steps)
                 train_hooks = [logging_hook]
                 predict_hooks = []
 

@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from .base import ResNet
+from .resnet import ResNet
 
 
 class ResNetCifar10(ResNet):

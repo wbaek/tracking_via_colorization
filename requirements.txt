@@ -1,4 +1,5 @@
 natsort
+pyyaml
 xmltodict
 numpy
 imageio

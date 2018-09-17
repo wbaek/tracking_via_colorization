@@ -7,6 +7,7 @@ import tensorpack.dataflow as df
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
+from tracking_via_colorization.config import Config
 from tracking_via_colorization.networks.classifier import Classifier
 from tracking_via_colorization.networks.resnet_cifar10 import ResNetCifar10
 
@@ -39,11 +40,15 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-dir', type=str, default=None)
+    parser.add_argument('-c', '--config', type=str, default=None)
     args = parser.parse_args()
 
+    Config(args.config)
+    print(Config.get_instance())
+
     input_functions = {
-        'train': get_input_fn('train', 32),
-        'eval': get_input_fn('test', 128)
+        'train': get_input_fn('train', Config.get_instance()['mode']['train']['batch_size']),
+        'eval': get_input_fn('test', Config.get_instance()['mode']['eval']['batch_size'])
     }
 
     model_fn = Classifier.get('resnet', ResNetCifar10, 'channels_last', log_steps=100)
@@ -52,13 +57,12 @@ if __name__ == '__main__':
         save_summary_steps=10,
         session_config=None
     )
-    hparams = tf.contrib.training.HParams(**{
-        'data_format': 'channels_last',
-        'weight_decay': 2e-4,
-        'batch_norm_decay': 0.997,
-        'batch_norm_epsilon': 1e-5,
-        'optimizer': tf.train.MomentumOptimizer(learning_rate=0.01, momentum=0.9),
-    })
+    hparams = Config.get_instance()['hparams']
+    hparams['optimizer'] = tf.train.MomentumOptimizer(
+        learning_rate=Config.get_instance()['optimizer']['learning_rate'],
+        momentum=Config.get_instance()['optimizer']['momentum']
+    )
+    hparams = tf.contrib.training.HParams(**hparams)
 
     estimator = tf.estimator.Estimator(
         model_fn=model_fn,

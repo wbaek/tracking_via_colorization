@@ -7,7 +7,6 @@ import tensorpack.dataflow as df
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
-import tracking_via_colorization as tc
 from tracking_via_colorization.networks.base import Model
 from tracking_via_colorization.networks.resnet_cifar10 import ResNetCifar10
 
@@ -23,7 +22,7 @@ def get_input_fn(name, batch_size=32):
     if is_training:
         ds = df.RepeatedData(ds, -1)
         ds = tp.AugmentImageComponent(ds, augmentors)
-    ds = df.MapData(ds, lambda x: tuple(x))  # for tensorflow.data.dataset
+    ds = df.MapData(ds, tuple)  # for tensorflow.data.dataset
     ds.reset_state()
 
     def input_fn():

@@ -6,7 +6,7 @@ import tensorflow as tf
 
 class Classifier():
     @staticmethod
-    def get(name, network_architecture, input_data_format='channels_last', log_steps=1):
+    def get(name, network_architecture, **kwargs):
         def _model_fn(features, labels, mode, params):
             """
             Args:
@@ -34,7 +34,7 @@ class Classifier():
                         batch_norm_decay=batch_norm_decay,
                         batch_norm_epsilon=batch_norm_epsilon
                     )
-                    logits = model.forward(features, input_data_format=input_data_format)
+                    logits = model.forward(features, **kwargs)
                     predictions = {
                         'classes': tf.argmax(input=logits, axis=1),
                         'probabilities': tf.nn.softmax(logits),
@@ -66,7 +66,7 @@ class Classifier():
                     'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(logits, labels, k=1), tf.float32))
 
                 }
-                logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=log_steps)
+                logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=kwargs.get('log_steps', 1))
                 train_hooks = [logging_hook]
                 predict_hooks = []
 

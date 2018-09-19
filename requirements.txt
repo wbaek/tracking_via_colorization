@@ -8,7 +8,7 @@ scipy
 
 opencv-python
 opencv-contrib-python
-tensorflow
+#tensorflow
 tensorpack
 
 pytest

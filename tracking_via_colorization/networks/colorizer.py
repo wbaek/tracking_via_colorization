@@ -6,7 +6,7 @@ import tensorflow as tf
 
 class Colorizer():
     @staticmethod
-    def get(name, network_architecture, **kwargs):
+    def get(name, network_architecture, temperature=1.0, **kwargs):
         def _model_fn(features, labels, mode, params):
             """
             Args:
@@ -24,8 +24,6 @@ class Colorizer():
             batch_norm_decay = params.batch_norm_decay
             batch_norm_epsilon = params.batch_norm_epsilon
 
-            temperature = kwargs.get('temperature', 1.0)
-
             optimizer = params.optimizer
 
             with tf.variable_scope(name, reuse=False):  # tf.AUTO_REUSE):
@@ -39,12 +37,14 @@ class Colorizer():
                     logits, target_labels = model.forward(features, labels, temperature)
                     reshaped_logits = tf.reshape(logits, (-1, 16))
                     reshaped_target_labels = tf.reshape(target_labels, (-1,))
+                    tf.logging.info('reshaped logits: %s, labels: %s', reshaped_logits.get_shape(), reshaped_target_labels.get_shape())
                     predictions = {
                         'classes': tf.argmax(input=logits, axis=-1),
+                        'probabilities': tf.nn.softmax(logits, axis=-1),
                         'logits': logits
                     }
                     metrics = {
-                        'accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1, 1)))
+                        'accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1,)))
                     }
 
                     weights = tf.trainable_variables()
@@ -67,7 +67,6 @@ class Colorizer():
                     'step': tf.train.get_global_step(),
                     'loss': loss,
                     'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(reshaped_logits, reshaped_target_labels, k=1), tf.float32))
-
                 }
                 logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=kwargs.get('log_steps', 1))
                 train_hooks = [logging_hook]

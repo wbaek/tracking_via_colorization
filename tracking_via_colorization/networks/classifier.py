@@ -64,7 +64,6 @@ class Classifier():
                     'step': tf.train.get_global_step(),
                     'loss': loss,
                     'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(logits, labels, k=1), tf.float32))
-
                 }
                 logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=kwargs.get('log_steps', 1))
                 train_hooks = [logging_hook]

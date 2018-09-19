@@ -27,7 +27,7 @@ def get_input_fn(name, centroids, batch_size=32):
         ds = tp.AugmentImageComponent(ds, augmentors)
 
     ds = df.MapData(ds, lambda dp: [cv2.resize(dp[0], (256, 256)), cv2.resize(dp[0], (32, 32))])
-    ds = df.MapData(ds, lambda dp: [cv2.cvtColor(dp[0], cv2.COLOR_RGB2GRAY).reshape((256, 256, 1)), cv2.cvtColor(dp[1], cv2.COLOR_RGB2Lab)[:, :, 1:]])
+    ds = df.MapData(ds, lambda dp: [cv2.cvtColor(dp[0], cv2.COLOR_RGB2GRAY).reshape((256, 256, 1)).astype(np.float32), cv2.cvtColor(dp[1], cv2.COLOR_RGB2Lab)[:, :, 1:]])
     ds = df.MapDataComponent(ds, lambda label: np.array([np.argmin(np.linalg.norm(centroids-v, axis=1)) for v in label.reshape((-1, 2))]).reshape((32, 32, 1)), index=1)
 
     ds = df.MapData(ds, tuple)  # for tensorflow.data.dataset
@@ -49,22 +49,22 @@ if __name__ == '__main__':
     parser.add_argument('--model-dir', type=str, default=None)
     parser.add_argument('--centroids', type=str, default='./datas/centroids/centroids_16k_cifar10_10000samples.npy')
     parser.add_argument('-c', '--config', type=str, default=None)
-    args = parser.parse_args()
+    parsed_args = parser.parse_args()
 
-    Config(args.config)
-    print(Config.get_instance())
+    Config(parsed_args.config)
+    tf.logging.info('\nargs: %s\nconfig: %s', parsed_args, Config.get_instance())
 
-    with open(args.centroids, 'rb') as f:
+    with open(parsed_args.centroids, 'rb') as f:
         centroids = np.load(f)
 
     input_functions = {
-        'train': get_input_fn('train', centroids, Config.get_instance()['mode']['train']['batch_size']),
-        'eval': get_input_fn('test', centroids, Config.get_instance()['mode']['eval']['batch_size'])
+        'train': get_input_fn('train', centroids, 4),
+        'eval': get_input_fn('test', centroids, 4)
     }
 
-    model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1000)
+    model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1)
     config = tf.estimator.RunConfig(
-        model_dir=args.model_dir,
+        model_dir=parsed_args.model_dir,
         save_summary_steps=10,
         session_config=None
     )
@@ -81,8 +81,9 @@ if __name__ == '__main__':
         params=hparams
     )
 
-    tf.logging.set_verbosity(tf.logging.INFO)
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    tf.logging.set_verbosity(tf.logging.DEBUG)
     for epoch in range(50):
-        estimator.train(input_fn=input_functions['train'], steps=(50000 // 32))
-        estimator.evaluate(input_fn=input_functions['eval'], steps=100)
+        estimator.train(input_fn=input_functions['train'], steps=(1000))
+        estimator.evaluate(input_fn=input_functions['eval'], steps=10)
 

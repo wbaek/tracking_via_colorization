@@ -1,6 +1,7 @@
 natsort
 pyyaml
 xmltodict
+ujson
 numpy
 imageio
 sklearn
@@ -10,6 +11,8 @@ opencv-python
 opencv-contrib-python
 #tensorflow
 tensorpack
+
+youtube-dl
 
 pytest
 pytest-cov

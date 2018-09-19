@@ -34,6 +34,7 @@ And install below dependencies.
 
 ```bash
 apt install -y libsm6 libxext-dev libxrender-dev
+apt install -y ffmpeg
 pip install -r requirements.txt
 ```
 

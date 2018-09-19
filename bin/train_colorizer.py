@@ -58,8 +58,8 @@ if __name__ == '__main__':
         centroids = np.load(f)
 
     input_functions = {
-        'train': get_input_fn('train', centroids, 4),
-        'eval': get_input_fn('test', centroids, 4)
+        'train': get_input_fn('train', centroids, Config.get_instance()['mode']['train']['batch_size']),
+        'eval': get_input_fn('test', centroids, Config.get_instance()['mode']['eval']['batch_size'])
     }
 
     model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1)

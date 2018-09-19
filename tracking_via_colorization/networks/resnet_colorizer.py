@@ -28,18 +28,20 @@ class ResNetColorizer(ResNet):
         target_labels = tf.stack(splited_labels[3], axis=0)
 
         with tf.name_scope('similarity_matrix') as name_scope:
-            # innerproduct [real_batch, HEIGHT * WIDTH * 3, HEIGHT * WIDTH * 1, FEATURE_CHANNELS] -> [real_batch, HEIGHT * WIDTH * 3,HEIGHT * WIDTH * 1]
-            innerproduct = tf.reshape(reference_features, [-1, FEATURE_AREA * 3, 1, FEATURE_CHANNELS]) * tf.reshape(target_features, [-1, 1, FEATURE_AREA, FEATURE_CHANNELS])
-            innerproduct = tf.reduce_sum(innerproduct, axis=-1)
-            similarity_mat = tf.nn.softmax(innerproduct / temperature, 1)
+            ref = tf.transpose(tf.reshape(reference_features, [-1, FEATURE_AREA * 3, FEATURE_CHANNELS]), perm=[0, 2, 1])
+            tar = tf.reshape(target_features, [-1, FEATURE_AREA, FEATURE_CHANNELS])
+
+            innerproduct = tf.matmul(tar, ref)
+            tf.logging.info('image after unit %s: %s', name_scope, innerproduct.get_shape())
+
+            # is transposed
+            similarity_mat = tf.nn.softmax(innerproduct / temperature, 2)
             tf.logging.info('image after unit %s: %s', name_scope, similarity_mat.get_shape())
 
         with tf.name_scope('prediction') as name_scope:
-            # prediction [real_batch, HEIGHT * WIDTH * 3, HEIGHT * WIDTH * 1, num_labels] -> [real_batch*, HEIGHT * WIDTH, num_labels]
-            dense_reference_labels = tf.reshape(tf.one_hot(reference_labels, num_labels), [-1, FEATURE_AREA * 3, 1, num_labels])
+            dense_reference_labels = tf.reshape(tf.one_hot(reference_labels, num_labels), [-1, FEATURE_AREA * 3, num_labels])
 
-            prediction = tf.expand_dims(similarity_mat, -1) * dense_reference_labels
-            prediction = tf.reduce_sum(prediction, axis=1)
+            prediction = tf.matmul(similarity_mat, dense_reference_labels)
             prediction = tf.reshape(prediction, [-1, FEATURE_HEIGHT, FEATURE_WIDTH, num_labels])
             target_labels = tf.reshape(target_labels, [-1, FEATURE_HEIGHT, FEATURE_WIDTH, 1])
             tf.logging.info('image after unit %s: %s', name_scope, prediction.get_shape())

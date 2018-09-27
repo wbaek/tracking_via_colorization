@@ -22,6 +22,8 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
+            sudo apt-get update
+            sudo apt-get install -y libcap-dev
             pip install --upgrade setuptools
             pip install -r requirements.txt
 
@@ -62,6 +64,8 @@ jobs:
           command: |
             python2 -m virtualenv venv
             . venv/bin/activate
+            sudo apt-get update
+            sudo apt-get install -y libcap-dev
             pip install --upgrade setuptools
             pip install -r requirements.txt
 

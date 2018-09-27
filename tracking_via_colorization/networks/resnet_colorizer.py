@@ -12,40 +12,41 @@ class ResNetColorizer(ResNet):
         super(ResNetColorizer, self).__init__(is_training, data_format, batch_norm_decay, batch_norm_epsilon)
 
     def forward(self, images, labels, temperature=1.0, num_labels=16, input_data_format='channels_last', **kwargs):
-        # images [BATCH, HEIGHT(256), WIDTH(256), CHANNEL(1)]
-        # labels [BATCH, HEIGHT(32), WIDTH(32), CHANNEL(1)]
-        # features [BATCH, HEIGHT(32), WIDTH(32), CHANNEL(256)]
-        features = self.feature(images, input_data_format)
+        # images [BATCH, 4, HEIGHT(256), WIDTH(256), CHANNEL(1)]
+        # labels [BATCH, 4, HEIGHT(32), WIDTH(32), CHANNEL(1)]
+        # features [BATCH * 4, HEIGHT(32), WIDTH(32), CHANNEL(64)]
+        features = self.feature(tf.reshape(images, (-1, 256, 256, 1)), input_data_format)
         _, FEATURE_HEIGHT, FEATURE_WIDTH, FEATURE_CHANNELS = features.shape.as_list()
         FEATURE_AREA = FEATURE_HEIGHT * FEATURE_WIDTH
 
-        splited_features = tf.split(features, num_or_size_splits=4, axis=0)
-        splited_labels = tf.split(labels, num_or_size_splits=4, axis=0)
+        features = tf.reshape(features, (-1, 4, FEATURE_HEIGHT, FEATURE_WIDTH, FEATURE_CHANNELS))
+        splited_features = tf.split(features, num_or_size_splits=4, axis=1)
+        splited_labels = tf.split(labels, num_or_size_splits=4, axis=1)
 
-        reference_features = tf.stack(splited_features[:3], axis=0)
-        reference_labels = tf.stack(splited_labels[:3], axis=0)
-        target_features = tf.stack(splited_features[3], axis=0)
-        target_labels = tf.stack(splited_labels[3], axis=0)
+        reference_features = tf.stack(splited_features[:3], axis=1)
+        reference_labels = tf.stack(splited_labels[:3], axis=1)
+        target_features = tf.stack(splited_features[3:], axis=1)
+        target_labels = tf.stack(splited_labels[3:], axis=1)
 
         with tf.name_scope('similarity_matrix') as name_scope:
             ref = tf.transpose(tf.reshape(reference_features, [-1, FEATURE_AREA * 3, FEATURE_CHANNELS]), perm=[0, 2, 1])
             tar = tf.reshape(target_features, [-1, FEATURE_AREA, FEATURE_CHANNELS])
+            tf.logging.info('similarity innerproduct %s x %s', tar.get_shape(), ref.get_shape())
 
             innerproduct = tf.matmul(tar, ref)
-            tf.logging.info('image after unit %s: %s', name_scope, innerproduct.get_shape())
-
-            # is transposed
             similarity_mat = tf.nn.softmax(innerproduct / temperature, 2)
             tf.logging.info('image after unit %s: %s', name_scope, similarity_mat.get_shape())
 
         with tf.name_scope('prediction') as name_scope:
-            dense_reference_labels = tf.reshape(tf.one_hot(reference_labels, num_labels), [-1, FEATURE_AREA * 3, num_labels])
+            ref = tf.reshape(reference_labels, (-1, FEATURE_AREA * 3))
+            tar = tf.reshape(target_labels, (-1, FEATURE_HEIGHT, FEATURE_WIDTH, FEATURE_CHANNELS))
+            dense_reference_labels = tf.one_hot(ref, num_labels)
 
             prediction = tf.matmul(similarity_mat, dense_reference_labels)
             prediction = tf.reshape(prediction, [-1, FEATURE_HEIGHT, FEATURE_WIDTH, num_labels])
             target_labels = tf.reshape(target_labels, [-1, FEATURE_HEIGHT, FEATURE_WIDTH, 1])
             tf.logging.info('image after unit %s: %s', name_scope, prediction.get_shape())
-        return prediction, target_labels
+        return similarity_mat, prediction, tar
 
 
     def feature(self, x, input_data_format='channels_last'):
@@ -92,5 +93,8 @@ class ResNetColorizer(ResNet):
             x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
             x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
             x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
+
+        with tf.name_scope('feature'):
+            x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=64, stride=1)
 
         return x

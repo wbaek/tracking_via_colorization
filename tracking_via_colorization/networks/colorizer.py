@@ -34,7 +34,7 @@ class Colorizer():
                         batch_norm_decay=batch_norm_decay,
                         batch_norm_epsilon=batch_norm_epsilon
                     )
-                    logits, target_labels = model.forward(features, labels, temperature)
+                    similarity, logits, target_labels = model.forward(features, labels, temperature)
                     reshaped_logits = tf.reshape(logits, (-1, 16))
                     reshaped_target_labels = tf.reshape(target_labels, (-1,))
                     tf.logging.info('reshaped logits: %s, labels: %s', reshaped_logits.get_shape(), reshaped_target_labels.get_shape())

@@ -1,7 +1,6 @@
 import pytest
 from tracking_via_colorization.feeder.dataset import Kinetics
 
-
 def test_kinetics():
     kinetics = Kinetics('/data/public/rw/datasets/videos/kinetics')
     assert kinetics.size() == 391782
@@ -24,7 +23,7 @@ def test_kinetics_get():
 
 def test_kinetics_generator():
     kinetics = Kinetics('/data/public/rw/datasets/videos/kinetics')
-    generator = kinetics.generator()
+    generator = kinetics.get_data()
     idx, images = next(generator)
     assert idx == 0
     assert len(images) == 1
@@ -45,7 +44,7 @@ def test_kinetics_generator():
 
 def test_kinetics_generator_with_num_frames():
     kinetics = Kinetics('/data/public/rw/datasets/videos/kinetics')
-    generator = kinetics.generator(num_frames=4)
+    generator = kinetics.get_data(num_frames=4)
     idx, images = next(generator)
     assert idx == 0
     assert len(images) == 4
@@ -66,7 +65,7 @@ def test_kinetics_generator_with_num_frames():
 
 def test_kinetics_generator_with_num_frames_skips():
     kinetics = Kinetics('/data/public/rw/datasets/videos/kinetics')
-    generator = kinetics.generator(num_frames=4, skips=[0, 4, 4, 8])
+    generator = kinetics.get_data(num_frames=4, skips=[0, 4, 4, 8])
     idx, images = next(generator)
     assert idx == 0
     assert len(images) == 4
@@ -86,3 +85,22 @@ def test_kinetics_generator_with_num_frames_skips():
     assert [image.shape for image in images] == [(240, 320, 3)] * 4
 
 
+import cv2
+import numpy as np
+
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+from tensorpack import dataflow as df
+
+def test_kinetics_tensorpack_dataflow():
+    ds = Kinetics('/data/public/rw/datasets/videos/kinetics', num_frames=4, skips=[0, 4, 4, 8])
+
+    ds = df.MapDataComponent(ds, lambda images: [cv2.resize(image, (256, 256)) for image in images], index=1)
+    ds = df.MapDataComponent(ds, lambda images: np.stack(images, axis=0), index=1)
+    ds = df.BatchData(ds, 6)
+
+    ds.reset_state()
+    generator = ds.get_data()
+    for _ in range(10):
+        index, images = next(generator)
+        assert images.shape == (6, 4, 256, 256, 3)

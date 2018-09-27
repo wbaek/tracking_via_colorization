@@ -12,33 +12,41 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Kinetics():
-    def __init__(self, base_path, shuffle=False):
+    def __init__(self, base_path, shuffle=False, num_frames=1, skips=[0]):
         self.base_path = base_path
+        self.shuffle = shuffle
+        self.num_frames = num_frames
+        self.skips = skips
         self.metas = []
 
         metas = json.load(open(os.path.join(base_path, 'kinetics_train.json')))
         self.keys = sorted(metas.keys())
         for i, key in enumerate(self.keys):
-            #if not os.path.exists(os.path.join(base_path, 'processed', key + '.mp4')):
-            #    continue
             metas[key]['key'] = key
             self.metas.append(metas[key])
         self.index = list(range(len(self.keys)))
-        if shuffle:
-            self.index = np.random.permutation(self.index)
 
+        
     @property
     def name(self):
         return 'kinetics'
 
     @property
     def names(self):
+        if self.shuffle:
+            self.index = np.random.permutation(self.index)
         return [self.metas[idx]['key'] for idx in self.index]
+
+    def reset_state(self):
+        pass
+
+    def __len__(self):
+        return len(self.index)
 
     def size(self, name=None):
         if name is None:
             return len(self.metas)
-        raise NotImplemented
+        return self.__len__()
 
     def get_filename(self, name):
         if name not in self.keys:
@@ -48,7 +56,13 @@ class Kinetics():
         exists = os.path.exists(filename)
         return exists, filename
 
-    def generator(self, num_frames=1, skips=[0]):
+    def get_data(self, num_frames=None, skips=None):
+        return self.__iter__(num_frames, skips)
+
+    def __iter__(self, num_frames=None, skips=None):
+        num_frames = num_frames if num_frames is not None else self.num_frames
+        skips = skips if skips is not None else self.skips
+
         for name in self.names:
             exists, filename = self.get_filename(name)
             if not exists:
@@ -66,6 +80,6 @@ class Kinetics():
                 images.append(image)
                 if len(images) == num_frames:
                     index += 1
-                    yield index, images
+                    yield [index, images]
                     images = []
 

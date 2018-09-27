@@ -11,7 +11,7 @@ opencv-python
 opencv-contrib-python
 #tensorflow
 tensorpack
-git+https://github.com/seveas/python-prctl.git
+git+https://github.com/seveas/python-prctl.git#egg=python-prctl
 
 youtube-dl
 

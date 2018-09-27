@@ -14,7 +14,7 @@ class ResNetCifar10(ResNet):
         # Add one in case label starts with 1. No impact if label starts with 0.
         self.num_classes = 10 + 1
 
-    def forward(self, x, input_data_format='channels_last', **kwargs):
+    def forward(self, x, input_data_format='channels_last'):
         # resnet_layer = self._residual_v2
         resnet_layer = self._bottleneck_residual_v2
 

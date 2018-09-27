@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=I1101
 import os
 import logging
 import itertools
 
-import ujson as json
 import cv2
 import numpy as np
+import ujson as json
 
 
 LOGGER = logging.getLogger(__name__)
 
 
 class Kinetics():
-    def __init__(self, base_path, shuffle=False, num_frames=1, skips=[0]):
+    def __init__(self, base_path, shuffle=False, num_frames=1, skips=(0,)):
         self.base_path = base_path
         self.shuffle = shuffle
         self.num_frames = num_frames
@@ -21,12 +22,11 @@ class Kinetics():
 
         metas = json.load(open(os.path.join(base_path, 'kinetics_train.json')))
         self.keys = sorted(metas.keys())
-        for i, key in enumerate(self.keys):
+        for _, key in enumerate(self.keys):
             metas[key]['key'] = key
             self.metas.append(metas[key])
         self.index = list(range(len(self.keys)))
 
-        
     @property
     def name(self):
         return 'kinetics'
@@ -50,7 +50,7 @@ class Kinetics():
 
     def get_filename(self, name):
         if name not in self.keys:
-            raise KeyError('not exists name at %s', name)
+            raise KeyError('not exists name at %s' % name)
         LOGGER.debug('[Kinetics.get] %s', name)
         filename = os.path.join(self.base_path, 'processed', name + '.mp4')
         exists = os.path.exists(filename)
@@ -71,7 +71,7 @@ class Kinetics():
             index = -1
             images = []
             capture = cv2.VideoCapture(filename)
-            for i, skip in itertools.cycle(enumerate(skips)):
+            for _, skip in itertools.cycle(enumerate(skips)):
                 for _ in range(skip):
                     capture.read()
                 ret, image = capture.read()
@@ -82,4 +82,3 @@ class Kinetics():
                     index += 1
                     yield [index, images]
                     images = []
-

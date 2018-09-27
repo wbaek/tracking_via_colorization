@@ -41,7 +41,8 @@ class Colorizer():
                     predictions = {
                         'classes': tf.argmax(input=logits, axis=-1),
                         'probabilities': tf.nn.softmax(logits, axis=-1),
-                        'logits': logits
+                        'logits': logits,
+                        'similarity': similarity,
                     }
                     metrics = {
                         'accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1,)))

@@ -1,8 +1,8 @@
+# pylint: disable=I1101
 import os
 import sys
 import time
 import logging
-import threading
 
 import ujson as json
 
@@ -11,7 +11,7 @@ def main(args):
     logging.info('args: %s', args)
     kinetics_filename = os.path.join(args.path, 'kinetics_train.json')
     if not os.path.exists(kinetics_filename):
-        raise Exception('not exists kinetic data file at %s', kinetics_filename)
+        raise Exception('not exists kinetic data file at %s' % kinetics_filename)
     for foldername in ['original', 'processed']:
         if not os.path.exists(os.path.join(args.path, foldername)):
             os.mkdir(os.path.join(args.path, foldername))
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--log-filename', type=str, default='')
     parser.add_argument('--debug', action='store_true')
     parsed_args = parser.parse_args()
-     
+
     log_format = '[%(asctime)s %(levelname)s] %(message)s'
     level = logging.DEBUG if parsed_args.debug else logging.INFO
     if not parsed_args.log_filename:

@@ -1,5 +1,12 @@
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 import pytest
+import cv2
+import numpy as np
+from tensorpack import dataflow as df
+
 from tracking_via_colorization.feeder.dataset import Kinetics
+
 
 def test_kinetics():
     kinetics = Kinetics('/data/public/rw/datasets/videos/kinetics')
@@ -19,7 +26,7 @@ def test_kinetics_get():
     assert kinetics.get_filename(kinetics.names[-1]) == (False, '/data/public/rw/datasets/videos/kinetics/processed/zzz_3yWpTXo.mp4')
     with pytest.raises(KeyError) as exception_info:
         kinetics.get_filename('NOT_EXISTS_NAME')
-    assert exception_info.value.args[1] == 'NOT_EXISTS_NAME'
+    assert exception_info.value.args[0] == 'not exists name at NOT_EXISTS_NAME'
 
 def test_kinetics_generator():
     kinetics = Kinetics('/data/public/rw/datasets/videos/kinetics')
@@ -31,7 +38,7 @@ def test_kinetics_generator():
 
     for _ in range(299 - 1):
         next(generator)
-        
+
     idx, images = next(generator)
     assert idx == 299
     assert len(images) == 1
@@ -52,7 +59,7 @@ def test_kinetics_generator_with_num_frames():
 
     for _ in range(299 // 4 - 1):
         next(generator)
-        
+
     idx, images = next(generator)
     assert idx == 74
     assert len(images) == 4
@@ -73,7 +80,7 @@ def test_kinetics_generator_with_num_frames_skips():
 
     for _ in range(299 // (1 + 5 + 5 + 9) - 1):
         next(generator)
-        
+
     idx, images = next(generator)
     assert idx == 14
     assert len(images) == 4
@@ -83,14 +90,6 @@ def test_kinetics_generator_with_num_frames_skips():
     assert idx == 0
     assert len(images) == 4
     assert [image.shape for image in images] == [(240, 320, 3)] * 4
-
-
-import cv2
-import numpy as np
-
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-from tensorpack import dataflow as df
 
 def test_kinetics_tensorpack_dataflow():
     ds = Kinetics('/data/public/rw/datasets/videos/kinetics', num_frames=4, skips=[0, 4, 4, 8])
@@ -102,5 +101,5 @@ def test_kinetics_tensorpack_dataflow():
     ds.reset_state()
     generator = ds.get_data()
     for _ in range(10):
-        index, images = next(generator)
+        _, images = next(generator)
         assert images.shape == (6, 4, 256, 256, 3)

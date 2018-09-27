@@ -1,3 +1,4 @@
+# pylint: disable=I1101
 import os
 import sys
 import copy
@@ -5,7 +6,6 @@ import copy
 import cv2
 import numpy as np
 import tensorflow as tf
-import tensorpack as tp
 import tensorpack.dataflow as df
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +40,7 @@ def dataflow(centroids, shuffle=True):
     return ds
 
 def get_input_fn(name, centroids, batch_size=32):
-    is_training = name == 'train'
+    _ = name
     ds = dataflow(centroids)
     ds.reset_state()
 
@@ -65,17 +65,17 @@ if __name__ == '__main__':
 
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
     tf.logging.set_verbosity(tf.logging.INFO)
- 
+
     Config(parsed_args.config)
     device_info = Devices.get_devices(gpu_ids=parsed_args.gpus)
     tf.logging.info('\nargs: %s\nconfig: %s\ndevice info: %s', parsed_args, Config.get_instance(), device_info)
 
     with open(parsed_args.centroids, 'rb') as f:
-        centroids = np.load(f)
+        loaded_centroids = np.load(f)
 
     input_functions = {
-        'train': get_input_fn('train', centroids, Config.get_instance()['mode']['train']['batch_size']),
-        'eval': get_input_fn('test', centroids, Config.get_instance()['mode']['eval']['batch_size'])
+        'train': get_input_fn('train', loaded_centroids, Config.get_instance()['mode']['train']['batch_size']),
+        'eval': get_input_fn('test', loaded_centroids, Config.get_instance()['mode']['eval']['batch_size'])
     }
 
     model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     )
     hparams = Config.get_instance()['hparams']
     hparams['optimizer'] = tf.train.AdamOptimizer(
-        learning_rate = 0.001
+        learning_rate=0.001
     )
     hparams = tf.contrib.training.HParams(**hparams)
 
@@ -99,4 +99,3 @@ if __name__ == '__main__':
     for epoch in range(50):
         estimator.train(input_fn=input_functions['train'], steps=(1000))
         estimator.evaluate(input_fn=input_functions['eval'], steps=10)
-

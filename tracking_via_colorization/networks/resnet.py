@@ -41,8 +41,8 @@ class ResNet():
         assert data_format in ('channels_first', 'channels_last')
         self._data_format = data_format
 
-    def forward(self, x, input_data_format):
-        raise NotImplementedError('forward() is implemented in ResNet sub classes')
+    # def forward(self, x, input_data_format):
+    #     raise NotImplementedError('forward() is implemented in ResNet sub classes')
 
     def _residual_v1(self,
                      x,

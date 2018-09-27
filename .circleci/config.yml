@@ -33,7 +33,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html tests
+            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html tests --ignore=tests/feeder/dataset/
 
       - store_test_results:
           path: test-reports
@@ -72,7 +72,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html
+            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html tests --ignore=tests/feeder/dataset/
 
       - store_test_results:
           path: test-reports

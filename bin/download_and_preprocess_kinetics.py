@@ -1,6 +1,8 @@
 import os
 import sys
+import time
 import logging
+import threading
 
 import ujson as json
 
@@ -15,45 +17,53 @@ def main(args):
             os.mkdir(os.path.join(args.path, foldername))
 
     kinetics = json.load(open(kinetics_filename))
+    keys = sorted(kinetics.keys())
+
     if not args.process:
-        for i, (key, value) in enumerate(kinetics.items()):
+        for i, key in enumerate(keys):
+            value = kinetics[key]
             original_path = os.path.join(args.path, 'original', key + '.mp4')
             if os.path.exists(original_path):
-                logging.info('exist video %s', key)
+                logging.info('[%04d/%04d] exists video %s', i, len(kinetics), key)
                 continue
             try:
                 logging.info('[%04d/%04d] download video %s', i, len(kinetics), key)
                 command = [
                     'youtube-dl', '--quiet', '--no-warnings', '-f', 'mp4',
-                    '-o', '"%s"' % original_path, '"%s"' % value['url']
+                    '-o', '"%s"' % original_path, '"%s"' % value['url'], '&',
                 ]
                 logging.info(' '.join(command))
                 os.system(' '.join(command))
+                time.sleep(0.5)
             except Exception as e:
                 logging.error('error with %s video', key)
                 logging.error('%s: %s', type(e), str(e))
 
     else:
-        for i, (key, value) in enumerate(kinetics.items()):
+        for i, key in enumerate(keys):
+            value = kinetics[key]
             original_path = os.path.join(args.path, 'original', key + '.mp4')
             processed_path = os.path.join(args.path, 'processed', key + '.mp4')
             if not os.path.exists(original_path):
-                logging.info('not exist video %s', key)
+                logging.info('[%04d/%04d] not exists video %s', i, len(kinetics), key)
                 continue
             if os.path.exists(processed_path):
-                logging.info('already processed video %s', key)
+                logging.info('[%04d/%04d] already processed video %s', i, len(kinetics), key)
                 continue
             try:
                 logging.info('[%04d/%04d] process video %s', i, len(kinetics), key)
                 command = [
-                    'ffmpeg', '-i', '"%s"' % original_path,
+                    'ffmpeg', '-loglevel panic',
+                    '-i', '"%s"' % original_path,
                     '-t', '%f' % value['duration'],
                     '-ss', '%f' % value['annotations']['segment'][0],
                     '-strict', '-2',
-                    '"%s"' % processed_path
+                    '"%s"' % processed_path,
+                    '&'
                 ]
                 logging.info(' '.join(command))
                 os.system(' '.join(command))
+                time.sleep(2)
             except Exception as e:
                 logging.error('error with %s video', key)
                 logging.error('%s: %s', type(e), str(e))

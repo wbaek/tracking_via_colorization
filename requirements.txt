@@ -1,6 +1,7 @@
 natsort
 pyyaml
 xmltodict
+ujson
 numpy
 imageio
 sklearn
@@ -8,8 +9,11 @@ scipy
 
 opencv-python
 opencv-contrib-python
-tensorflow
+#tensorflow
 tensorpack
+git+https://github.com/seveas/python-prctl.git#egg=python-prctl
+
+youtube-dl
 
 pytest
 pytest-cov

@@ -51,7 +51,7 @@ if __name__ == '__main__':
         'eval': get_input_fn('test', Config.get_instance()['mode']['eval']['batch_size'])
     }
 
-    model_fn = Classifier.get('resnet', ResNetCifar10, 'channels_last', log_steps=100)
+    model_fn = Classifier.get('resnet', ResNetCifar10)
     config = tf.estimator.RunConfig(
         model_dir=args.model_dir,
         save_summary_steps=10,

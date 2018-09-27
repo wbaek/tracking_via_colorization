@@ -41,8 +41,8 @@ class ResNet():
         assert data_format in ('channels_first', 'channels_last')
         self._data_format = data_format
 
-    def forward(self, x, input_data_format):
-        raise NotImplementedError('forward() is implemented in ResNet sub classes')
+    # def forward(self, x, input_data_format):
+    #     raise NotImplementedError('forward() is implemented in ResNet sub classes')
 
     def _residual_v1(self,
                      x,
@@ -102,7 +102,7 @@ class ResNet():
             x = self._relu(x)
             x = self._conv(x, kernel_size, out_filter, 1)
 
-            if in_filter != out_filter:
+            if in_filter != out_filter or stride > 1:
                 pad = (out_filter - in_filter) // 2
                 orig_x = self._avg_pool(orig_x, stride, stride)
                 if self._data_format == 'channels_first':
@@ -145,7 +145,7 @@ class ResNet():
             x = self._relu(x)
             x = self._conv(x, 1, out_filter, 1, is_atrous=True)
 
-            if in_filter != out_filter:
+            if in_filter != out_filter or stride > 1:
                 orig_x = self._conv(orig_x, 1, out_filter, stride, is_atrous=True)
             x = tf.add(x, orig_x)
 

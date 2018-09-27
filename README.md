@@ -16,11 +16,15 @@ This TensorFlow implementation is designed with these goals:
 
 ### Train
 
+* colorizer
+```
+python3 bin/train_colorizer.py --model-dir models/colorizer
+tensorboard --host 0.0.0.0 --port 6006 --logdir models
+```
+
 * cifar10
 ```
 python3 bin/train_estimator_cifar10.py --model-dir models/test
-tensorboard --host 0.0.0.0 --port 6006 --logdir models
-
 ```
 
 ### Prerequisite
@@ -33,7 +37,8 @@ Should install below libraries.
 And install below dependencies.
 
 ```bash
-apt install -y libsm6 libxext-dev libxrender-dev
+apt install -y libsm6 libxext-dev libxrender-dev libcap-dev
+apt install -y ffmpeg
 pip install -r requirements.txt
 ```
 

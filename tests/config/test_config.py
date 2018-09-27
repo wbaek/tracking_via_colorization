@@ -16,6 +16,7 @@ def test_singletone():
     assert conf1 == conf2
     Config.clear()
 
+@pytest.mark.filterwarnings("ignore:MarkInfo")
 @pytest.mark.datafiles(
     os.path.join(FIXTURE_DIR, 'configs', 'basic.yaml')
 )
@@ -26,6 +27,7 @@ def test_singletone2(datafiles):
         _ = Config(filenames[0])
     Config.clear()
 
+@pytest.mark.filterwarnings("ignore:MarkInfo")
 @pytest.mark.datafiles(
     os.path.join(FIXTURE_DIR, 'configs', 'basic.yaml')
 )

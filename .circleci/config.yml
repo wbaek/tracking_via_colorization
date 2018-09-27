@@ -22,6 +22,9 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
+            sudo apt-get update
+            sudo apt-get install -y libcap-dev
+            pip install --upgrade setuptools
             pip install -r requirements.txt
 
       - save_cache:
@@ -33,7 +36,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html tests
+            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html tests --ignore=tests/feeder/dataset/
 
       - store_test_results:
           path: test-reports
@@ -61,6 +64,9 @@ jobs:
           command: |
             python2 -m virtualenv venv
             . venv/bin/activate
+            sudo apt-get update
+            sudo apt-get install -y libcap-dev
+            pip install --upgrade setuptools
             pip install -r requirements.txt
 
       - save_cache:
@@ -72,7 +78,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html
+            py.test --junit-xml test-reports/junit.xml --cov=tracking_via_colorization --cov-report=html tests --ignore=tests/feeder/dataset/
 
       - store_test_results:
           path: test-reports

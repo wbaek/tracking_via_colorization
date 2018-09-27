@@ -4,9 +4,9 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-class Classifier():
+class Colorizer():
     @staticmethod
-    def get(name, network_architecture, **kwargs):
+    def get(name, network_architecture, temperature=1.0, **kwargs):
         def _model_fn(features, labels, mode, params):
             """
             Args:
@@ -34,18 +34,22 @@ class Classifier():
                         batch_norm_decay=batch_norm_decay,
                         batch_norm_epsilon=batch_norm_epsilon
                     )
-                    logits = model.forward(features, **kwargs)
+                    similarity, logits, target_labels = model.forward(features, labels, temperature)
+                    reshaped_logits = tf.reshape(logits, (-1, 16))
+                    reshaped_target_labels = tf.reshape(target_labels, (-1,))
+                    tf.logging.info('reshaped logits: %s, labels: %s', reshaped_logits.get_shape(), reshaped_target_labels.get_shape())
                     predictions = {
-                        'classes': tf.argmax(input=logits, axis=1),
-                        'probabilities': tf.nn.softmax(logits),
-                        'logits': logits
+                        'classes': tf.argmax(input=logits, axis=-1),
+                        'probabilities': tf.nn.softmax(logits, axis=-1),
+                        'logits': logits,
+                        'similarity': similarity,
                     }
                     metrics = {
-                        'accuracy': tf.metrics.accuracy(labels, predictions['classes'])
+                        'accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1,)))
                     }
 
                     weights = tf.trainable_variables()
-                    loss = tf.losses.sparse_softmax_cross_entropy(logits=logits, labels=labels)
+                    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=reshaped_logits, labels=reshaped_target_labels)
                     loss = tf.reduce_mean(loss)
                     loss += weight_decay * tf.add_n([tf.nn.l2_loss(v) for v in weights])
                     gradients = tf.gradients(loss, weights)
@@ -63,7 +67,7 @@ class Classifier():
                 tensors_to_log = {
                     'step': tf.train.get_global_step(),
                     'loss': loss,
-                    'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(logits, labels, k=1), tf.float32))
+                    'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(reshaped_logits, reshaped_target_labels, k=1), tf.float32))
                 }
                 logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=kwargs.get('log_steps', 1))
                 train_hooks = [logging_hook]

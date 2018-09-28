@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=I1101
 import os
+import time
 import logging
 import itertools
 
@@ -38,7 +39,7 @@ class Kinetics():
         return [self.metas[idx]['key'] for idx in self.index]
 
     def reset_state(self):
-        pass
+        np.random.seed(int(time.time() * 1e7) % 2**32)
 
     def __len__(self):
         return len(self.index)
@@ -72,6 +73,8 @@ class Kinetics():
             images = []
             capture = cv2.VideoCapture(filename)
             for _, skip in itertools.cycle(enumerate(skips)):
+                if len(images) == num_frames:
+                    images = []
                 for _ in range(skip):
                     capture.read()
                 ret, image = capture.read()
@@ -81,4 +84,3 @@ class Kinetics():
                 if len(images) == num_frames:
                     index += 1
                     yield [index, images]
-                    images = []

@@ -15,7 +15,10 @@ class ResNetColorizer(ResNet):
         # images [BATCH, 4, HEIGHT(256), WIDTH(256), CHANNEL(1)]
         # labels [BATCH, 4, HEIGHT(32), WIDTH(32), CHANNEL(1)]
         # features [BATCH * 4, HEIGHT(32), WIDTH(32), CHANNEL(64)]
-        features = self.feature(tf.reshape(images, (-1, 256, 256, 1)), input_data_format)
+        images = tf.reshape(images, (-1, 256, 256, 1))
+        tf.summary.image('inputs/images', images, max_outputs=8)
+
+        features = self.feature(images, input_data_format)
         _, height, width, channels = features.shape.as_list()
         area = height * width
 
@@ -34,19 +37,21 @@ class ResNetColorizer(ResNet):
             tf.logging.info('similarity innerproduct %s x %s', tar.get_shape(), ref.get_shape())
 
             innerproduct = tf.matmul(tar, ref)
-            similarity_mat = tf.nn.softmax(innerproduct / temperature, 2)
-            tf.logging.info('image after unit %s: %s', name_scope, similarity_mat.get_shape())
+            similarity = tf.nn.softmax(innerproduct / temperature, 2)
+            _, h, w = similarity.shape
+            tf.logging.info('image after unit %s: %s', name_scope, similarity.get_shape())
+            tf.summary.image('outputs/similarity', tf.reshape(similarity, [-1, h, w, 1]), max_outputs=4)
 
         with tf.name_scope('prediction') as name_scope:
             ref = tf.reshape(reference_labels, (-1, area * 3))
             tar = tf.reshape(target_labels, (-1, height, width, channels))
             dense_reference_labels = tf.one_hot(ref, num_labels)
 
-            prediction = tf.matmul(similarity_mat, dense_reference_labels)
+            prediction = tf.matmul(similarity, dense_reference_labels)
             prediction = tf.reshape(prediction, [-1, height, width, num_labels])
             target_labels = tf.reshape(target_labels, [-1, height, width, 1])
             tf.logging.info('image after unit %s: %s', name_scope, prediction.get_shape())
-        return similarity_mat, prediction, tar
+        return similarity, prediction, tar
 
 
     def feature(self, x, input_data_format='channels_last'):

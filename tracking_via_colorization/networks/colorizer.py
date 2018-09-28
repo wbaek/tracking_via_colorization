@@ -6,7 +6,7 @@ import tensorflow as tf
 
 class Colorizer():
     @staticmethod
-    def get(name, network_architecture, temperature=1.0, **kwargs):
+    def get(name, network_architecture, **kwargs):
         def _model_fn(features, labels, mode, params):
             """
             Args:
@@ -25,6 +25,7 @@ class Colorizer():
             batch_norm_epsilon = params.batch_norm_epsilon
 
             optimizer = params.optimizer
+            temperature = 1.0 if is_training else 0.5
 
             with tf.variable_scope(name, reuse=False):  # tf.AUTO_REUSE):
                 with tf.name_scope('network') as name_scope:
@@ -53,6 +54,15 @@ class Colorizer():
                     loss = tf.reduce_mean(loss)
                     loss += weight_decay * tf.add_n([tf.nn.l2_loss(v) for v in weights])
                     gradients = tf.gradients(loss, weights)
+
+                    with tf.name_scope('summaries'):
+                        for weight, gradient in zip(weights, gradients):
+                            variable_name = weight.name.replace(':', '_')
+                            if 'BatchNorm' in variable_name:
+                                continue
+                            tf.summary.histogram(variable_name, weight)
+                            tf.summary.histogram(variable_name + '/gradients', gradient)
+
             if is_training:
                 tf.summary.scalar("accuracy", metrics['accuracy'][1])
 

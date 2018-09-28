@@ -59,8 +59,8 @@ if __name__ == '__main__':
     )
     hparams = Config.get_instance()['hparams']
     hparams['optimizer'] = tf.train.MomentumOptimizer(
-        learning_rate=Config.get_instance()['optimizer']['learning_rate'],
-        momentum=Config.get_instance()['optimizer']['momentum']
+        learning_rate=0.001,
+        momentum=0.9
     )
     hparams = tf.contrib.training.HParams(**hparams)
 

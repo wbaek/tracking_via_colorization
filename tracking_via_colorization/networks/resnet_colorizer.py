@@ -55,8 +55,8 @@ class ResNetColorizer(ResNet):
 
 
     def feature(self, x, input_data_format='channels_last'):
-        resnet_layer = self._residual_v2
-        # resnet_layer = self._bottleneck_residual_v2
+        # resnet_layer = self._residual_v2
+        resnet_layer = self._bottleneck_residual_v2
 
         assert input_data_format in ('channels_first', 'channels_last')
         if self._data_format != input_data_format:

@@ -36,7 +36,7 @@ def dataflow(centroids, num_process=16, shuffle=True):
     ds = df.MapData(ds, lambda dp: [np.stack(dp[0] + dp[2], axis=0), np.stack(dp[1] + dp[3], axis=0)])
 
     ds = df.MapData(ds, tuple)  # for tensorflow.data.dataset
-    ds = df.MultiProcessPrefetchData(ds, nr_prefetch=num_process * 8, nr_proc=num_process)
+    ds = df.MultiProcessPrefetchData(ds, nr_prefetch=512, nr_proc=num_process)
     return ds
 
 def get_input_fn(name, centroids, batch_size=32, num_process=16):
@@ -64,7 +64,7 @@ def main(args):
 
     input_functions = {
         'train': get_input_fn('train', loaded_centroids, Config.get_instance()['mode']['train']['batch_size'], args.num_process),
-        'eval': get_input_fn('test', loaded_centroids, Config.get_instance()['mode']['eval']['batch_size'], max(1, args.num_process // 8))
+        'eval': get_input_fn('test', loaded_centroids, Config.get_instance()['mode']['eval']['batch_size'], max(1, args.num_process // 4))
     }
 
     model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1)
@@ -87,7 +87,7 @@ def main(args):
     )
 
     for epoch in range(50):
-        estimator.train(input_fn=input_functions['train'], steps=(1000))
+        estimator.train(input_fn=input_functions['train'], steps=1000)
         estimator.evaluate(input_fn=input_functions['eval'], steps=50)
 
 if __name__ == '__main__':
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpus', type=int, nargs='*', default=[0])
     parser.add_argument('--model-dir', type=str, default=None)
     parser.add_argument('--centroids', type=str, default='./datas/centroids/centroids_16k_cifar10_10000samples.npy')
-    parser.add_argument('--lr', type=float, default=0.0001)
+    parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--num-process', type=int, default=16)
     parser.add_argument('-c', '--config', type=str, default=None)
     parsed_args = parser.parse_args()

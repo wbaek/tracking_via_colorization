@@ -162,6 +162,11 @@ class ResNet():
     def _conv(self, x, kernel_size, filters, strides, is_atrous=False):
         """Convolution."""
 
+        if self._data_format == 'channels_first':
+            in_channels = x.shape.as_list()[1]
+        else:
+            in_channels = x.shape.as_list()[-1]
+
         padding = 'SAME'
         if not is_atrous and strides > 1:
             pad = kernel_size - 1
@@ -180,7 +185,7 @@ class ResNet():
             padding=padding,
             use_bias=False,
             data_format=self._data_format,
-            kernel_initializer=tf.initializers.random_normal(stddev=math.sqrt(2.0 / (kernel_size * kernel_size * filters * filters)))
+            kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=math.sqrt(2.0 / (kernel_size * kernel_size * in_channels * filters)))
         )
 
     def _batch_norm(self, x):

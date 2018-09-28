@@ -45,26 +45,29 @@ class Colorizer():
                         'logits': logits,
                         'similarity': similarity,
                     }
-                    metrics = {
-                        'accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1,)))
-                    }
 
                     weights = tf.trainable_variables()
                     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=reshaped_logits, labels=reshaped_target_labels)
                     loss = tf.reduce_mean(loss)
-                    loss += weight_decay * tf.add_n([tf.nn.l2_loss(v) for v in weights])
-                    gradients = tf.gradients(loss, weights)
+                    total_loss = loss + (weight_decay * tf.add_n([tf.nn.l2_loss(v) for v in weights]))
+                    gradients = tf.gradients(total_loss, weights)
 
-                    with tf.name_scope('summaries'):
-                        for weight, gradient in zip(weights, gradients):
-                            variable_name = weight.name.replace(':', '_')
-                            if 'BatchNorm' in variable_name:
-                                continue
-                            tf.summary.histogram(variable_name, weight)
-                            tf.summary.histogram(variable_name + '/gradients', gradient)
+                    metrics = {
+                        'accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1,))),
+                        'loss': tf.metrics.mean(loss),
+                        'loss_total': tf.metrics.mean(total_loss),
+                    }
 
-            if is_training:
-                tf.summary.scalar("accuracy", metrics['accuracy'][1])
+            with tf.name_scope('summaries'):
+                for weight, gradient in zip(weights, gradients):
+                    variable_name = weight.name.replace(':', '_')
+                    if 'BatchNorm' in variable_name:
+                        continue
+                    tf.summary.histogram(variable_name, weight)
+                    tf.summary.histogram(variable_name + '/gradients', gradient)
+            with tf.name_scope('metrics'):
+                for key, value in metrics.items():
+                    tf.summary.scalar(key, value[1])
 
             with tf.name_scope('optimizer'):
                 operations = [
@@ -77,6 +80,7 @@ class Colorizer():
                 tensors_to_log = {
                     'step': tf.train.get_global_step(),
                     'loss': loss,
+                    'loss_total': total_loss,
                     'accuracy': tf.reduce_mean(tf.cast(tf.nn.in_top_k(reshaped_logits, reshaped_target_labels, k=1), tf.float32))
                 }
                 logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=kwargs.get('log_steps', 1))
@@ -86,7 +90,7 @@ class Colorizer():
             return tf.estimator.EstimatorSpec(
                 mode=mode,
                 predictions=predictions,
-                loss=loss,
+                loss=total_loss,
                 train_op=train_op,
                 training_hooks=train_hooks,
                 prediction_hooks=predict_hooks,

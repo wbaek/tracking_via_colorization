@@ -29,7 +29,7 @@ def dataflow(centroids, shuffle=True):
     # for labels (ref, target)
     for idx in [1, 3]:
         ds = df.MapDataComponent(ds, lambda images: [cv2.resize(image, (32, 32)) for image in images], index=idx)
-        ds = df.MapDataComponent(ds, lambda images: [cv2.cvtColor(image, cv2.COLOR_BGR2Lab)[:, :, 1:] for image in images], index=idx)
+        ds = df.MapDataComponent(ds, lambda images: [cv2.cvtColor(np.float32(image / 255.0), cv2.COLOR_BGR2Lab)[:, :, 1:] for image in images], index=idx)
         ds = df.MapDataComponent(ds, lambda images: [np.array([np.argmin(np.linalg.norm(centroids-v, axis=1)) for v in image.reshape((-1, 2))]).reshape((32, 32, 1)) for image in images], index=idx)
 
     # stack for tensor
@@ -60,6 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpus', type=int, nargs='*', default=[0])
     parser.add_argument('--model-dir', type=str, default=None)
     parser.add_argument('--centroids', type=str, default='./datas/centroids/centroids_16k_cifar10_10000samples.npy')
+    parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('-c', '--config', type=str, default=None)
     parsed_args = parser.parse_args()
 
@@ -81,12 +82,13 @@ if __name__ == '__main__':
     model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1)
     config = tf.estimator.RunConfig(
         model_dir=parsed_args.model_dir,
+        keep_checkpoint_max=30,
         save_summary_steps=10,
         session_config=None
     )
     hparams = Config.get_instance()['hparams']
     hparams['optimizer'] = tf.train.AdamOptimizer(
-        learning_rate=0.001
+        learning_rate=parsed_args.lr
     )
     hparams = tf.contrib.training.HParams(**hparams)
 

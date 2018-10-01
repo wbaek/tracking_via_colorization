@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     ds = df.dataset.Cifar10('train', shuffle=False)
     ds = df.MapDataComponent(ds, lambda image: cv2.resize(image, (32, 32)))
-    ds = df.MapDataComponent(ds, lambda image: cv2.cvtColor(image, cv2.COLOR_RGB2Lab))
+    ds = df.MapDataComponent(ds, lambda image: cv2.cvtColor(np.float32(image / 255.0), cv2.COLOR_RGB2Lab))
     ds = df.MapDataComponent(ds, lambda image: image[:, :, 1:])
     ds = df.MapDataComponent(ds, lambda image: image.reshape((-1, 2)))
     ds = df.RepeatedData(ds, -1)

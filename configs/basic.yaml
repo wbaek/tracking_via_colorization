@@ -2,12 +2,9 @@ mode:
     train:
         batch_size: 32
     eval:
-        batch_size: 128
+        batch_size: 32
 hparams:
     data_format: channels_last
-    weight_decay: 0.0002
+    weight_decay: 0.0001
     batch_norm_decay: 0.997
     batch_norm_epsilon: 0.00001
-optimizer:
-    learning_rate: 0.01
-    momentum: 0.9

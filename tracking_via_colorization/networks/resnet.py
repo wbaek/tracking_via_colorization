@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import math
 import tensorflow as tf
 
 
@@ -64,13 +65,16 @@ class ResNet():
             x = self._conv(x, kernel_size, out_filter, 1)
             x = self._batch_norm(x)
 
-            if in_filter != out_filter:
-                orig_x = self._avg_pool(orig_x, stride, stride)
-                pad = (out_filter - in_filter) // 2
-                if self._data_format == 'channels_first':
-                    orig_x = tf.pad(orig_x, [[0, 0], [pad, pad], [0, 0], [0, 0]])
+            if in_filter != out_filter or stride > 1:
+                if in_filter > out_filter:
+                    orig_x = self._conv(orig_x, 1, out_filter, stride)
                 else:
-                    orig_x = tf.pad(orig_x, [[0, 0], [0, 0], [0, 0], [pad, pad]])
+                    orig_x = self._avg_pool(orig_x, stride, stride)
+                    pad = (out_filter - in_filter) // 2
+                    if self._data_format == 'channels_first':
+                        orig_x = tf.pad(orig_x, [[0, 0], [pad, pad], [0, 0], [0, 0]])
+                    else:
+                        orig_x = tf.pad(orig_x, [[0, 0], [0, 0], [0, 0], [pad, pad]])
 
             x = self._relu(tf.add(x, orig_x))
 
@@ -103,12 +107,15 @@ class ResNet():
             x = self._conv(x, kernel_size, out_filter, 1)
 
             if in_filter != out_filter or stride > 1:
-                pad = (out_filter - in_filter) // 2
-                orig_x = self._avg_pool(orig_x, stride, stride)
-                if self._data_format == 'channels_first':
-                    orig_x = tf.pad(orig_x, [[0, 0], [pad, pad], [0, 0], [0, 0]])
+                if in_filter > out_filter:
+                    orig_x = self._conv(orig_x, 1, out_filter, stride)
                 else:
-                    orig_x = tf.pad(orig_x, [[0, 0], [0, 0], [0, 0], [pad, pad]])
+                    pad = (out_filter - in_filter) // 2
+                    orig_x = self._avg_pool(orig_x, stride, stride)
+                    if self._data_format == 'channels_first':
+                        orig_x = tf.pad(orig_x, [[0, 0], [pad, pad], [0, 0], [0, 0]])
+                    else:
+                        orig_x = tf.pad(orig_x, [[0, 0], [0, 0], [0, 0], [pad, pad]])
 
             x = tf.add(x, orig_x)
 
@@ -155,6 +162,11 @@ class ResNet():
     def _conv(self, x, kernel_size, filters, strides, is_atrous=False):
         """Convolution."""
 
+        if self._data_format == 'channels_first':
+            in_channels = x.shape.as_list()[1]
+        else:
+            in_channels = x.shape.as_list()[-1]
+
         padding = 'SAME'
         if not is_atrous and strides > 1:
             pad = kernel_size - 1
@@ -172,7 +184,8 @@ class ResNet():
             strides=strides,
             padding=padding,
             use_bias=False,
-            data_format=self._data_format
+            data_format=self._data_format,
+            kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=math.sqrt(2.0 / (kernel_size * kernel_size * in_channels * filters)))
         )
 
     def _batch_norm(self, x):

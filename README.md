@@ -14,6 +14,11 @@ This TensorFlow implementation is designed with these goals:
 
 ## How to Use
 
+### Clustering
+```
+python3 bin/clustering.py -k 16 -n 10000 -o datas/centroids/centroids_16k_cifar10_10000samples.npy
+```
+
 ### Train
 
 * colorizer

@@ -1,6 +1,5 @@
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-import pytest
 import cv2
 import numpy as np
 from tensorpack import dataflow as df
@@ -82,4 +81,4 @@ def test_davis_tensorpack_dataflow():
     for _ in range(10):
         _, images, annotations = next(generator)
         assert images.shape == (6, 4, 256, 256, 3)
-        assert images.shape == (6, 4, 256, 256, 3)
+        assert annotations.shape == (6, 4, 256, 256, 3)

@@ -51,7 +51,7 @@ class Davis():
             index = -1
             images = []
             annotations = []
-            for frame, (image, annotation) in enumerate(zip(self._images(name), self._annotations(name))):
+            for image, annotation in zip(self._images(name), self._annotations(name)):
                 if len(images) == num_frames:
                     images = []
                     annotations = []

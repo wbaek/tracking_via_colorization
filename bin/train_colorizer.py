@@ -88,7 +88,7 @@ def main(args):
         params=hparams
     )
 
-    for epoch in range(50):
+    for dummy_epoch in range(50):
         estimator.train(input_fn=input_functions['train'], steps=1000)
         estimator.evaluate(input_fn=input_functions['eval'], steps=50)
 

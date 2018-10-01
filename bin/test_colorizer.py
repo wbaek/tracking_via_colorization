@@ -20,7 +20,7 @@ from tracking_via_colorization.networks.resnet_colorizer import ResNetColorizer
 def dataflow(name='davis', scale=1):
     if name == 'davis':
         ds = Davis('/data/public/rw/datasets/videos/davis/trainval', num_frames=1, shuffle=False)
-    elif name =='kinetics':
+    elif name == 'kinetics':
         ds = Kinetics('/data/public/rw/datasets/videos/kinetics', num_frames=1, skips=[0], shuffle=False)
     else:
         raise Exception('not support dataset %s' % name)
@@ -57,7 +57,7 @@ def main(args):
     hparams['optimizer'] = tf.train.AdamOptimizer()
     hparams = tf.contrib.training.HParams(**hparams)
 
-    estimator_spec= Colorizer.get('resnet', ResNetColorizer, num_reference=1)(
+    estimator_spec = Colorizer.get('resnet', ResNetColorizer, num_reference=1)(
         features=placeholders['features'],
         labels=placeholders['labels'],
         mode=tf.estimator.ModeKeys.PREDICT,
@@ -85,30 +85,27 @@ def main(args):
         })
 
         # predictions['similarity'][ref_idx][tar_idx]
-        indicies = np.argmax(predictions['similarity'], axis=-1).reshape((-1, ))
+        indicies = np.argmax(predictions['similarity'], axis=-1).reshape((-1,))
         mapping = np.zeros((32 * 32 * scale * scale, 2))
         for i, index in enumerate(indicies):
             mapping[i, :] = [index % (32 * scale), index // (32 * scale)]
         mapping = np.array(mapping, dtype=np.float32).reshape((32 * scale, 32 * scale, 2))
 
         height, width = mapping.shape[:2]
-        
+
         predicted = cv2.remap(cv2.resize(reference[2], (width, height)), mapping, None, cv2.INTER_LINEAR)
 
         stacked = np.concatenate([cv2.resize(image, (width, height)), predicted], axis=1)
         similarity = (np.copy(predictions['similarity']).reshape((32 * 32 * scale * scale, -1)) * 255.0).astype(np.uint8)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(scale, scale))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (scale, scale))
         similarity = cv2.resize(cv2.dilate(similarity, kernel), (32 * scale, 32 * scale))
 
-        base_dir = '%s/%04d' % (args.output, video_index)
-        for name, image in [('image', stacked), ('similarity', similarity)]:
-            folder = os.path.join(base_dir, name)
+        output_dir = '%s/%04d' % (args.output, video_index)
+        for name, result in [('image', stacked), ('similarity', similarity)]:
+            folder = os.path.join(output_dir, name)
             if not os.path.exists(folder):
                 os.makedirs(folder)
-            cv2.imwrite('%s/%04d.jpg' % (folder, frame), stacked)
-        #cv2.imwrite('%s/%04d/images/%04d.jpg' % (args.output, video_index, frame), stacked)
-        #cv2.imwrite('%s/%04d/similarity/%04d.jpg' % (args.output, video_index, frame), similarity)
-        #cv2.imwrite('similarity_%04d.jpg' % frame, predictions['similarity'])
+            cv2.imwrite('%s/%04d.jpg' % (folder, frame), result)
 
 if __name__ == '__main__':
     import argparse
@@ -117,7 +114,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--scale', type=int, default=1)
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('-c', '--config', type=str, default=None)
-    
+
     parser.add_argument('--name', type=str, default='davis')
     parser.add_argument('-o', '--output', type=str, default='results')
 

@@ -16,6 +16,16 @@ from tracking_via_colorization.feeder.dataset import Kinetics, Davis
 from tracking_via_colorization.networks.colorizer import Colorizer
 from tracking_via_colorization.networks.resnet_colorizer import ResNetColorizer
 
+def get_resize(small_axis=256):
+    def _resize(images):
+        for image in images:
+            height, width = image.shape[:2]
+            aspect_ratio = 1.0 * width / height
+            width = int(small_axis if aspect_ratio <= 1.0 else (small_axis * aspect_ratio))
+            height = int(small_axis if aspect_ratio >= 1.0 else (small_axis / aspect_ratio))
+            cv2.resize(image, (width, height))
+        return images
+    return _resize
 
 def dataflow(name='davis', scale=1):
     if name == 'davis':
@@ -25,17 +35,23 @@ def dataflow(name='davis', scale=1):
     else:
         raise Exception('not support dataset %s' % name)
 
-    ds = df.MapDataComponent(ds, lambda images: cv2.resize(images[0], (256 * scale, 256 * scale)), index=1)
-    if name == 'davis':
-        ds = df.MapDataComponent(ds, lambda images: cv2.resize(images[0], (256 * scale, 256 * scale)), index=2)
-    else:
+    if name != 'davis':
         ds = df.MapData(ds, lambda dp: [dp[0], dp[1], dp[1]])
 
     ds = df.MapData(ds, lambda dp: [
-        dp[0],
-        dp[1],
-        cv2.cvtColor(dp[1], cv2.COLOR_BGR2GRAY).reshape(256 * scale, 256 * scale, 1),
-        dp[2],
+        dp[0], # index
+        dp[1], # original
+        dp[2], # mask
+    ])
+
+    ds = df.MapDataComponent(ds, get_resize(256 * scale), index=1)
+    ds = df.MapDataComponent(ds, lambda images: cv2.resize(images[0], (256 * scale, 256 * scale)), index=2)
+
+    ds = df.MapData(ds, lambda dp: [
+        dp[0], # index
+        dp[1][0], # original
+        cv2.cvtColor(dp[2], cv2.COLOR_BGR2GRAY).reshape(256 * scale, 256 * scale, 1), # gray
+        dp[2], # mask
     ])
     ds = df.MultiProcessPrefetchData(ds, nr_prefetch=32, nr_proc=1)
     return ds
@@ -77,7 +93,7 @@ def main(args):
             video_index += 1
             reference = copy.deepcopy([image, gray, color])
             tf.logging.info('video index: %04d', video_index)
-        target = [image, gray, color]
+        target = [image, gray]
 
         predictions = session.run(estimator_spec.predictions, feed_dict={
             placeholders['features']: np.expand_dims(np.stack([reference[1], target[1]], axis=0), axis=0),
@@ -92,16 +108,24 @@ def main(args):
         mapping = np.array(mapping, dtype=np.float32).reshape((32 * scale, 32 * scale, 2))
 
         height, width = mapping.shape[:2]
-        resized_image = cv2.resize(image, (width, height))
+        #resized_image = cv2.resize(image, (width, height))
 
         predicted = cv2.remap(cv2.resize(reference[2], (width, height)), mapping, None, cv2.INTER_LINEAR)
-        if args.name == 'davis':
-            predicted = cv2.addWeighted(resized_image, 0.5, predicted, 0.5, 0)
 
-        stacked = np.concatenate([resized_image, predicted], axis=1)
+        height, width = image.shape[:2]
+        predicted = cv2.resize(predicted, (width, height))
+
+        if args.name == 'davis':
+            ret, mask = cv2.threshold(cv2.cvtColor(predicted, cv2.COLOR_BGR2GRAY), 10, 255, cv2.THRESH_BINARY)
+            mask_inv = cv2.bitwise_not(mask)
+
+            predicted = cv2.add(cv2.bitwise_and(image, image, mask=mask_inv), predicted)
+            predicted = cv2.addWeighted(image, 0.3, predicted, 0.7, 0)
+
+        stacked = np.concatenate([image, predicted], axis=1)
         similarity = (np.copy(predictions['similarity']).reshape((32 * 32 * scale * scale, -1)) * 255.0).astype(np.uint8)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (scale, scale))
-        similarity = cv2.resize(cv2.dilate(similarity, kernel), (32 * scale, 32 * scale))
+        similarity = cv2.resize(cv2.dilate(similarity, kernel), (32 * scale * 2, 32 * scale * 2))
 
         output_dir = '%s/%04d' % (args.output, video_index)
         for name, result in [('image', stacked), ('similarity', similarity)]:

@@ -32,6 +32,13 @@ tensorboard --host 0.0.0.0 --port 6006 --logdir models
 python3 bin/train_estimator_cifar10.py --model-dir models/test
 ```
 
+### Predict
+
+* colorizer
+```
+ython3 bin/test_colorizer.py --checkpoint models/test/model.ckpt-100000 --scale 1 --name davis -o results/davis/
+```
+
 ### Prerequisite
 
 Should install below libraries.

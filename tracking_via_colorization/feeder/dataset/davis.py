@@ -35,7 +35,7 @@ class Davis():
         np.random.seed(int(time.time() * 1e7) % 2**32)
 
     def __len__(self):
-        return len(self.index)
+        return len(self.index) * 100
 
     def size(self):
         return self.__len__()
@@ -47,7 +47,6 @@ class Davis():
         num_frames = num_frames if num_frames is not None else self.num_frames
 
         for name in self.names:
-
             index = -1
             images = []
             annotations = []

@@ -53,9 +53,9 @@ class Colorizer():
                     gradients = tf.gradients(total_loss, weights)
 
                     metrics = {
-                        'accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1,))),
-                        'loss': tf.metrics.mean(loss),
-                        'loss_total': tf.metrics.mean(total_loss),
+                        'metrics/accuracy': tf.metrics.accuracy(reshaped_target_labels, tf.reshape(predictions['classes'], (-1,))),
+                        'metrics/loss_xentropy': tf.metrics.mean(loss),
+                        'metrics/loss_total': tf.metrics.mean(total_loss),
                     }
 
             with tf.name_scope('summaries'):
@@ -65,9 +65,8 @@ class Colorizer():
                         continue
                     tf.summary.histogram(variable_name, weight)
                     tf.summary.histogram(variable_name + '/gradients', gradient)
-            with tf.name_scope('metrics'):
-                for key, value in metrics.items():
-                    tf.summary.scalar(key, value[1])
+            for key, value in metrics.items():
+                tf.summary.scalar(key, value[1])
 
             with tf.name_scope('optimizer'):
                 operations = [

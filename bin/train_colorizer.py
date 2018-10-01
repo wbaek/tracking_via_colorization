@@ -71,6 +71,8 @@ def main(args):
     config = tf.estimator.RunConfig(
         model_dir=args.model_dir,
         keep_checkpoint_max=30,
+        save_checkpoints_secs=None,
+        save_checkpoints_steps=500,
         save_summary_steps=10,
         session_config=None
     )

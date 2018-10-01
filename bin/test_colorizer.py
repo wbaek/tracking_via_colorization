@@ -92,10 +92,13 @@ def main(args):
         mapping = np.array(mapping, dtype=np.float32).reshape((32 * scale, 32 * scale, 2))
 
         height, width = mapping.shape[:2]
+        resized_image = cv2.resize(image, (width, height))
 
         predicted = cv2.remap(cv2.resize(reference[2], (width, height)), mapping, None, cv2.INTER_LINEAR)
+        if args.name == 'davis':
+            predicted = cv2.addWeighted(resized_image, 0.5, predicted, 0.5, 0)
 
-        stacked = np.concatenate([cv2.resize(image, (width, height)), predicted], axis=1)
+        stacked = np.concatenate([resized_image, predicted], axis=1)
         similarity = (np.copy(predictions['similarity']).reshape((32 * 32 * scale * scale, -1)) * 255.0).astype(np.uint8)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (scale, scale))
         similarity = cv2.resize(cv2.dilate(similarity, kernel), (32 * scale, 32 * scale))

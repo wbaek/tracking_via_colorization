@@ -70,9 +70,9 @@ def main(args):
     model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1)
     config = tf.estimator.RunConfig(
         model_dir=args.model_dir,
-        keep_checkpoint_max=30,
+        keep_checkpoint_max=100,
         save_checkpoints_secs=None,
-        save_checkpoints_steps=500,
+        save_checkpoints_steps=None,
         save_summary_steps=10,
         session_config=None
     )
@@ -88,7 +88,7 @@ def main(args):
         params=hparams
     )
 
-    for dummy_epoch in range(50):
+    for dummy_epoch in range(100):
         estimator.train(input_fn=input_functions['train'], steps=1000)
         estimator.evaluate(input_fn=input_functions['eval'], steps=50)
 

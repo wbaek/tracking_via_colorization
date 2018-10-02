@@ -4,9 +4,13 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wbaek/tracking_via_colorization/badge)](https://www.codefactor.io/repository/github/wbaek/tracking_via_colorization)
 [![CircleCI](https://circleci.com/gh/wbaek/tracking_via_colorization.svg?style=svg)](https://circleci.com/gh/wbaek/tracking_via_colorization)
 
+* colorization sample
+![tracking via colorization sample2](./datas/samples/sample2.gif)
+
+* tracking segmentation sample
 ![tracking via colorization sample0](./datas/samples/sample0.gif)
 ![tracking via colorization sample1](./datas/samples/sample1.gif)
-![tracking via colorization sample2](./datas/samples/sample2.gif)
+
 
 ## Introduction
 
@@ -39,7 +43,7 @@ python3 bin/train_estimator_cifar10.py --model-dir models/test
 
 * colorizer
 ```
-ython3 bin/test_colorizer.py --checkpoint models/test/model.ckpt-100000 --scale 1 --name davis -o results/davis/
+python3 bin/test_colorizer.py --checkpoint models/test/model.ckpt-100000 --scale 1 --name davis -o results/davis/
 ```
 
 ### Prerequisite

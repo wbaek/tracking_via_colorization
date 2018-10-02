@@ -72,7 +72,7 @@ def main(args):
         model_dir=args.model_dir,
         keep_checkpoint_max=100,
         save_checkpoints_secs=None,
-        save_checkpoints_steps=None,
+        save_checkpoints_steps=1000,
         save_summary_steps=10,
         session_config=None
     )

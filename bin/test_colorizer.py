@@ -43,14 +43,15 @@ def dataflow(name='davis', scale=1):
         dp[1], # original
         dp[2], # mask
     ])
+    size = (256 * scale, 256 * scale)
 
     ds = df.MapDataComponent(ds, get_resize(256 * scale), index=1)
-    ds = df.MapDataComponent(ds, lambda images: cv2.resize(images[0], (256 * scale, 256 * scale)), index=2)
+    ds = df.MapDataComponent(ds, lambda images: cv2.resize(images[0], size), index=2)
 
     ds = df.MapData(ds, lambda dp: [
         dp[0], # index
         dp[1][0], # original
-        cv2.cvtColor(dp[2], cv2.COLOR_BGR2GRAY).reshape(256 * scale, 256 * scale, 1), # gray
+        cv2.cvtColor(cv2.resize(dp[1][0], size), cv2.COLOR_BGR2GRAY).reshape((size[0], size[1], 1)), # gray
         dp[2], # mask
     ])
     ds = df.MultiProcessPrefetchData(ds, nr_prefetch=32, nr_proc=1)

@@ -66,67 +66,83 @@ def main(args):
     ds = dataflow(args.name, scale)
     ds.reset_state()
 
+    num_inputs = args.num_reference + 1
     placeholders = {
-        'features': tf.placeholder(tf.float32, (None, 2, 256 * scale, 256 * scale, 1), 'features'),
-        'labels': tf.placeholder(tf.int64, (None, 2, 32 * scale, 32 * scale, 1), 'labels'),
+        'features': tf.placeholder(tf.float32, (None, num_inputs, 256 * scale, 256 * scale, 1), 'features'),
+        'labels': tf.placeholder(tf.int64, (None, num_inputs, 32 * scale, 32 * scale, 1), 'labels'),
     }
     hparams = Config.get_instance()['hparams']
     hparams['optimizer'] = tf.train.AdamOptimizer()
     hparams = tf.contrib.training.HParams(**hparams)
 
-    estimator_spec = Colorizer.get('resnet', ResNetColorizer, num_reference=1)(
+    estimator_spec = Colorizer.get('resnet', ResNetColorizer, num_reference=args.num_reference)(
         features=placeholders['features'],
         labels=placeholders['labels'],
         mode=tf.estimator.ModeKeys.PREDICT,
         params=hparams
     )
-    dummy_labels = np.zeros((1, 2, 32 * scale, 32 * scale, 1), dtype=np.int64)
 
     session = tf.Session()
     saver = tf.train.Saver(tf.global_variables())
     saver.restore(session, args.checkpoint)
 
+    dummy_labels = np.zeros((1, num_inputs, 32 * scale, 32 * scale, 1), dtype=np.int64)
+
     video_index = -1
     for frame, image, gray, color in ds.get_data():
-        if video_index >= 50:
-            break
+        curr = {'image': image, 'gray': gray, 'color': color}
+
         if frame == 0:
             video_index += 1
-            reference = copy.deepcopy([image, gray, color])
+            dummy_features = [np.zeros((256 * scale, 256 * scale, 1), dtype=np.float32) for _ in range(num_inputs)]
+            dummy_references = [np.zeros((256 * scale, 256 * scale, 3), dtype=np.uint8) for _ in range(args.num_reference)]
+            prev = copy.deepcopy(curr)
+            dummy_features = dummy_features[1:] + [prev['gray']]
             tf.logging.info('video index: %04d', video_index)
-        target = [image, gray]
 
+        if frame <= args.num_reference:
+            dummy_features = dummy_features[1:] + [curr['gray']]
+            dummy_references = dummy_references[1:] + [curr['color']]
+
+        features = np.expand_dims(np.stack(dummy_features[1:] + [curr['gray']], axis=0), axis=0)
         predictions = session.run(estimator_spec.predictions, feed_dict={
-            placeholders['features']: np.expand_dims(np.stack([reference[1], target[1]], axis=0), axis=0),
+            placeholders['features']: features,
             placeholders['labels']: dummy_labels,
         })
 
-        # predictions['similarity'][ref_idx][tar_idx]
+        matrix_size = 32 * 32 * scale * scale
         indicies = np.argmax(predictions['similarity'], axis=-1).reshape((-1,))
-        mapping = np.zeros((32 * 32 * scale * scale, 2))
+        mapping = np.zeros((matrix_size, 2))
         for i, index in enumerate(indicies):
-            mapping[i, :] = [index % (32 * scale), index // (32 * scale)]
+            f = (index // (matrix_size)) % args.num_reference
+            y = index // (32 * scale)
+            x = index % (32 * scale)
+            mapping[i, :] = [x, (args.num_reference - f - 1) * (32 * scale) + y]
         mapping = np.array(mapping, dtype=np.float32).reshape((32 * scale, 32 * scale, 2))
 
         height, width = mapping.shape[:2]
-        #resized_image = cv2.resize(image, (width, height))
+        reference_colors = np.concatenate(dummy_references, axis=0)
 
-        predicted = cv2.remap(cv2.resize(reference[2], (width, height)), mapping, None, cv2.INTER_LINEAR)
+        predicted = cv2.remap(cv2.resize(reference_colors, (width, height * args.num_reference)), mapping, None, cv2.INTER_LINEAR)
+
+        predicted = cv2.resize(predicted, (256 * scale, 256 * scale))
+        # curr['color'] = np.copy(predicted)
 
         height, width = image.shape[:2]
         predicted = cv2.resize(predicted, (width, height))
+        prev = copy.deepcopy(curr)
 
         if args.name == 'davis':
-            ret, mask = cv2.threshold(cv2.cvtColor(predicted, cv2.COLOR_BGR2GRAY), 10, 255, cv2.THRESH_BINARY)
+            _, mask = cv2.threshold(cv2.cvtColor(predicted, cv2.COLOR_BGR2GRAY), 10, 255, cv2.THRESH_BINARY)
             mask_inv = cv2.bitwise_not(mask)
 
             predicted = cv2.add(cv2.bitwise_and(image, image, mask=mask_inv), predicted)
             predicted = cv2.addWeighted(image, 0.3, predicted, 0.7, 0)
 
         stacked = np.concatenate([image, predicted], axis=1)
-        similarity = (np.copy(predictions['similarity']).reshape((32 * 32 * scale * scale, -1)) * 255.0).astype(np.uint8)
+        similarity = (np.copy(predictions['similarity']).reshape((32 * 32 * scale * scale * args.num_reference, -1)) * 255.0).astype(np.uint8)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (scale, scale))
-        similarity = cv2.resize(cv2.dilate(similarity, kernel), (32 * scale * 2, 32 * scale * 2))
+        similarity = cv2.resize(cv2.dilate(similarity, kernel), (32 * scale * 2 * args.num_reference, 32 * scale * 2))
 
         output_dir = '%s/%04d' % (args.output, video_index)
         for name, result in [('image', stacked), ('similarity', similarity)]:
@@ -139,9 +155,11 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpus', type=int, nargs='*', default=[0])
-    parser.add_argument('-s', '--scale', type=int, default=1)
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('-c', '--config', type=str, default=None)
+
+    parser.add_argument('-s', '--scale', type=int, default=1)
+    parser.add_argument('-n', '--num-reference', type=int, default=1)
 
     parser.add_argument('--name', type=str, default='davis')
     parser.add_argument('-o', '--output', type=str, default='results')

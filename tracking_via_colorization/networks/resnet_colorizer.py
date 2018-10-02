@@ -26,6 +26,8 @@ class ResNetColorizer(ResNet):
         num_samples = num_reference + 1
 
         features = tf.reshape(features, (-1, num_samples, height, width, channels))
+        tf.summary.tensor_summary('outputs/features', features)
+
         splited_features = tf.split(features, num_or_size_splits=num_samples, axis=1)
         splited_labels = tf.split(labels, num_or_size_splits=num_samples, axis=1)
 
@@ -100,6 +102,6 @@ class ResNetColorizer(ResNet):
             x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
 
         with tf.name_scope('feature'):
-            x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=64, stride=1)
+            x = self._conv(x, kernel_size=1, filters=64, strides=1)
 
         return x

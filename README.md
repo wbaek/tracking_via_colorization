@@ -4,6 +4,9 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wbaek/tracking_via_colorization/badge)](https://www.codefactor.io/repository/github/wbaek/tracking_via_colorization)
 [![CircleCI](https://circleci.com/gh/wbaek/tracking_via_colorization.svg?style=svg)](https://circleci.com/gh/wbaek/tracking_via_colorization)
 
+![tracking via colorization sample0](./datas/samples/sample0.gif)
+![tracking via colorization sample1](./datas/samples/sample1.gif)
+![tracking via colorization sample2](./datas/samples/sample2.gif)
 
 ## Introduction
 

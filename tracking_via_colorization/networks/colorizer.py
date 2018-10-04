@@ -27,6 +27,7 @@ class Colorizer():
             optimizer = params.optimizer
             temperature = 1.0 if is_training else 0.5
 
+            num_labels = kwargs.get('num_labels', 16)
             num_reference = kwargs.get('num_reference', 3)
 
             with tf.variable_scope(name, reuse=False):  # tf.AUTO_REUSE):
@@ -41,9 +42,10 @@ class Colorizer():
                         features,
                         labels,
                         temperature=temperature,
+                        num_labels=num_labels,
                         num_reference=num_reference
                     )
-                    reshaped_logits = tf.reshape(logits, (-1, 16))
+                    reshaped_logits = tf.reshape(logits, (-1, num_labels))
                     reshaped_target_labels = tf.reshape(target_labels, (-1,))
                     tf.logging.info('reshaped logits: %s, labels: %s', reshaped_logits.get_shape(), reshaped_target_labels.get_shape())
                     predictions = {

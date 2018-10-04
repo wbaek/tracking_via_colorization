@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
@@ -26,7 +24,7 @@ class ResNetColorizer(ResNet):
         num_samples = num_reference + 1
 
         features = tf.reshape(features, (-1, num_samples, height, width, channels))
-        tf.summary.tensor_summary('outputs/features', features)
+        tf.summary.histogram('outputs/features', tf.reshape(features, (-1, channels)))
 
         splited_features = tf.split(features, num_or_size_splits=num_samples, axis=1)
         splited_labels = tf.split(labels, num_or_size_splits=num_samples, axis=1)
@@ -49,14 +47,13 @@ class ResNetColorizer(ResNet):
 
         with tf.name_scope('prediction') as name_scope:
             ref = tf.reshape(reference_labels, (-1, area * num_reference))
-            tar = tf.reshape(target_labels, (-1, height, width, channels))
             dense_reference_labels = tf.one_hot(ref, num_labels)
 
             prediction = tf.matmul(similarity, dense_reference_labels)
             prediction = tf.reshape(prediction, [-1, height, width, num_labels])
             target_labels = tf.reshape(target_labels, [-1, height, width, 1])
             tf.logging.info('image after unit %s: %s', name_scope, prediction.get_shape())
-        return similarity, prediction, tar
+        return similarity, prediction, target_labels
 
 
     def feature(self, x, input_data_format='channels_last'):

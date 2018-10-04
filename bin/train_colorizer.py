@@ -61,13 +61,14 @@ def main(args):
 
     with open(args.centroids, 'rb') as f:
         loaded_centroids = np.load(f)
+    num_labels = loaded_centroids.shape[0]
 
     input_functions = {
         'train': get_input_fn('train', loaded_centroids, Config.get_instance()['mode']['train']['batch_size'], args.num_process),
         'eval': get_input_fn('test', loaded_centroids, Config.get_instance()['mode']['eval']['batch_size'], max(1, args.num_process // 4))
     }
 
-    model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1)
+    model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1, num_labels=num_labels)
     config = tf.estimator.RunConfig(
         model_dir=args.model_dir,
         keep_checkpoint_max=100,
@@ -88,7 +89,7 @@ def main(args):
         params=hparams
     )
 
-    for dummy_epoch in range(100):
+    for dummy_epoch in range(args.epoch):
         estimator.train(input_fn=input_functions['train'], steps=1000)
         estimator.evaluate(input_fn=input_functions['eval'], steps=50)
 
@@ -97,8 +98,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpus', type=int, nargs='*', default=[0])
     parser.add_argument('--model-dir', type=str, default=None)
-    parser.add_argument('--centroids', type=str, default='./datas/centroids/centroids_16k_cifar10_10000samples.npy')
+    parser.add_argument('--centroids', type=str, default='./datas/centroids/centroids_16k_kinetics_10000samples.npy')
     parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--epoch', type=int, default=50)
     parser.add_argument('--num-process', type=int, default=16)
     parser.add_argument('-c', '--config', type=str, default=None)
     parsed_args = parser.parse_args()

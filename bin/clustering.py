@@ -9,6 +9,7 @@ import tensorpack.dataflow as df
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
+from tracking_via_colorization.feeder.dataset import Kinetics
 
 if __name__ == '__main__':
     import argparse
@@ -16,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', type=str, default='centroids.npy')
     parser.add_argument('-k', '--num-k', type=int, default=16)
     parser.add_argument('-n', '--num-samples', type=int, default=50000)
+    parser.add_argument('--name', type=str, default='kinetics')
 
     parser.add_argument('--log-filename', type=str, default='')
     parser.add_argument('--debug', action='store_true')
@@ -29,7 +31,12 @@ if __name__ == '__main__':
         logging.basicConfig(level=level, format=log_format, filename=args.log_filename)
     logging.info('args: %s', args)
 
-    ds = df.dataset.Cifar10('train', shuffle=False)
+    if args.name == 'kinetics':
+        ds = Kinetics('/data/public/rw/datasets/videos/kinetics', num_frames=1, skips=[0], shuffle=True)
+        ds = df.MapData(ds, lambda dp: [dp[1][0], dp[0]])
+    else:
+        ds = df.dataset.Cifar10('train', shuffle=True)
+
     ds = df.MapDataComponent(ds, lambda image: cv2.resize(image, (32, 32)))
     ds = df.MapDataComponent(ds, lambda image: cv2.cvtColor(np.float32(image / 255.0), cv2.COLOR_RGB2Lab))
     ds = df.MapDataComponent(ds, lambda image: image[:, :, 1:])

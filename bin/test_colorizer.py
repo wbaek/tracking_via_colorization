@@ -75,7 +75,7 @@ def main(args):
     hparams['optimizer'] = tf.train.AdamOptimizer()
     hparams = tf.contrib.training.HParams(**hparams)
 
-    estimator_spec = Colorizer.get('resnet', ResNetColorizer, num_reference=args.num_reference)(
+    estimator_spec = Colorizer.get('resnet', ResNetColorizer, num_reference=args.num_reference, predict_direction=args.direction)(
         features=placeholders['features'],
         labels=placeholders['labels'],
         mode=tf.estimator.ModeKeys.PREDICT,
@@ -160,6 +160,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-s', '--scale', type=int, default=1)
     parser.add_argument('-n', '--num-reference', type=int, default=1)
+    parser.add_argument('-d', '--direction', type=str, default='backward', help='[forward|backward] backward is default')
 
     parser.add_argument('--name', type=str, default='davis')
     parser.add_argument('-o', '--output', type=str, default='results')

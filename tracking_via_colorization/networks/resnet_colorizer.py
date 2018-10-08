@@ -9,7 +9,9 @@ class ResNetColorizer(ResNet):
     def __init__(self, is_training=True, data_format='channels_last', batch_norm_decay=0.997, batch_norm_epsilon=1e-5):
         super(ResNetColorizer, self).__init__(is_training, data_format, batch_norm_decay, batch_norm_epsilon)
 
-    def forward(self, images, labels, temperature=1.0, num_labels=16, num_reference=3, input_data_format='channels_last'):
+    def forward(self, images, labels,
+        temperature=1.0, num_labels=16, num_reference=3, predict_backward=True,
+        input_data_format='channels_last'):
         # images [BATCH, 4, HEIGHT(256), WIDTH(256), CHANNEL(1)]
         # labels [BATCH, 4, HEIGHT(32), WIDTH(32), CHANNEL(1)]
         # features [BATCH * 4, HEIGHT(32), WIDTH(32), CHANNEL(64)]
@@ -40,7 +42,8 @@ class ResNetColorizer(ResNet):
             tf.logging.info('similarity innerproduct %s x %s', tar.get_shape(), ref.get_shape())
 
             innerproduct = tf.matmul(tar, ref)
-            similarity = tf.nn.softmax(innerproduct / temperature, 2)
+            softmax_axis = 2 if predict_backward else 1
+            similarity = tf.nn.softmax(innerproduct / temperature, softmax_axis)
             _, h, w = similarity.shape
             tf.logging.info('image after unit %s: %s', name_scope, similarity.get_shape())
             tf.summary.image('outputs/similarity', tf.reshape(similarity, [-1, h, w, 1]), max_outputs=4)

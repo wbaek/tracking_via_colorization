@@ -68,7 +68,7 @@ def main(args):
         'eval': get_input_fn('test', loaded_centroids, Config.get_instance()['mode']['eval']['batch_size'], num_reference=args.num_reference, num_process=max(1, args.num_process // 4))
     }
 
-    model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1, num_reference=args.num_reference, num_labels=num_labels)
+    model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1, num_reference=args.num_reference, num_labels=num_labels, predict_direction=args.direction)
     config = tf.estimator.RunConfig(
         model_dir=args.model_dir,
         keep_checkpoint_max=100,
@@ -100,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('--model-dir', type=str, default=None)
     parser.add_argument('--centroids', type=str, default='./datas/centroids/centroids_16k_kinetics_10000samples.npy')
     parser.add_argument('--num-reference', type=int, default=3)
+     parser.add_argument('-d', '--direction', type=str, default='backward', help='[forward|backward] backward is default')
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--epoch', type=int, default=50)
     parser.add_argument('--num-process', type=int, default=16)

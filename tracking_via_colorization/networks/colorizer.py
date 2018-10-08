@@ -29,6 +29,7 @@ class Colorizer():
 
             num_labels = kwargs.get('num_labels', 16)
             num_reference = kwargs.get('num_reference', 3)
+            predict_backward = 'backward' == kwargs.get('predict_direction', 'backward')
 
             with tf.variable_scope(name, reuse=False):  # tf.AUTO_REUSE):
                 with tf.name_scope('network') as name_scope:
@@ -43,7 +44,8 @@ class Colorizer():
                         labels,
                         temperature=temperature,
                         num_labels=num_labels,
-                        num_reference=num_reference
+                        num_reference=num_reference,
+                        predict_backward=predict_backward,
                     )
                     reshaped_logits = tf.reshape(logits, (-1, num_labels))
                     reshaped_target_labels = tf.reshape(target_labels, (-1,))

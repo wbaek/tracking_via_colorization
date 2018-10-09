@@ -69,6 +69,7 @@ class Colorizer():
                         'metrics/loss_total': tf.metrics.mean(total_loss),
                     }
 
+            '''
             with tf.name_scope('summaries'):
                 for weight, gradient in zip(weights, gradients):
                     variable_name = weight.name.replace(':', '_')
@@ -76,6 +77,7 @@ class Colorizer():
                         continue
                     tf.summary.histogram(variable_name, weight)
                     tf.summary.histogram(variable_name + '/gradients', gradient)
+            # '''
             for key, value in metrics.items():
                 tf.summary.scalar(key, value[1])
 

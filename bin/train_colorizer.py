@@ -36,7 +36,8 @@ def dataflow(centroids, num_reference=3, num_process=16, shuffle=True):
     ds = df.MapData(ds, lambda dp: [np.stack(dp[0] + dp[2], axis=0), np.stack(dp[1] + dp[3], axis=0)])
 
     ds = df.MapData(ds, tuple)  # for tensorflow.data.dataset
-    ds = df.MultiProcessPrefetchData(ds, nr_prefetch=512, nr_proc=num_process)
+    ds = df.MultiProcessPrefetchData(ds, nr_prefetch=256, nr_proc=num_process)
+    ds = df.PrefetchDataZMQ(ds, nr_proc=1)
     return ds
 
 def get_input_fn(name, centroids, batch_size=32, num_reference=3, num_process=16):
@@ -100,8 +101,8 @@ if __name__ == '__main__':
     parser.add_argument('--model-dir', type=str, default=None)
     parser.add_argument('--centroids', type=str, default='./datas/centroids/centroids_16k_kinetics_10000samples.npy')
     parser.add_argument('--num-reference', type=int, default=3)
-     parser.add_argument('-d', '--direction', type=str, default='backward', help='[forward|backward] backward is default')
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('-d', '--direction', type=str, default='backward', help='[forward|backward] backward is default')
+    parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--epoch', type=int, default=50)
     parser.add_argument('--num-process', type=int, default=16)
     parser.add_argument('-c', '--config', type=str, default=None)

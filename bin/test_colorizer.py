@@ -1,6 +1,7 @@
 # pylint: disable=I1101
 import os
 import sys
+import time
 import copy
 
 import cv2
@@ -89,10 +90,16 @@ def main(args):
     dummy_labels = np.zeros((1, num_inputs, 32 * scale, 32 * scale, 1), dtype=np.int64)
 
     video_index = -1
+    start_time = time.time()
+    num_images = 0
     for frame, image, gray, color in ds.get_data():
         curr = {'image': image, 'gray': gray, 'color': color}
+        num_images += 1
 
         if frame == 0:
+            tf.logging.info('avg elapsed time per image: %.3fsec', (time.time() - start_time) / num_images)
+            start_time = time.time()
+            num_images = 0
             video_index += 1
             dummy_features = [np.zeros((256 * scale, 256 * scale, 1), dtype=np.float32) for _ in range(num_inputs)]
             dummy_references = [np.zeros((256 * scale, 256 * scale, 3), dtype=np.uint8) for _ in range(args.num_reference)]

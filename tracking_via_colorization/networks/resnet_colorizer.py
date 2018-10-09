@@ -61,7 +61,7 @@ class ResNetColorizer(ResNet):
 
     def feature(self, x, input_data_format='channels_last'):
         # resnet_layer = self._residual_v2
-        resnet_layer = self._bottleneck_residual_v2
+        resnet_layer = self._residual_v2
 
         assert input_data_format in ('channels_first', 'channels_last')
         if self._data_format != input_data_format:
@@ -72,36 +72,29 @@ class ResNetColorizer(ResNet):
 
         with tf.name_scope('stage0') as name_scope:
             x = x / 128 - 1
-            x = self._conv(x, kernel_size=3, filters=32, strides=1)
+            x = self._conv(x, kernel_size=7, filters=64, strides=2)
             x = self._batch_norm(x)
             x = self._relu(x)
             tf.logging.info('image after unit %s: %s', name_scope, x.get_shape())
 
         with tf.name_scope('stage1'):
-            x = resnet_layer(x, kernel_size=3, in_filter=32, out_filter=64, stride=2)
-            x = resnet_layer(x, kernel_size=3, in_filter=64, out_filter=64, stride=1)
-            x = resnet_layer(x, kernel_size=3, in_filter=64, out_filter=64, stride=1)
+            x = resnet_layer(x, kernel_size=3, in_filter=64, out_filter=64, stride=2)
             x = resnet_layer(x, kernel_size=3, in_filter=64, out_filter=64, stride=1)
 
         with tf.name_scope('stage2'):
             x = resnet_layer(x, kernel_size=3, in_filter=64, out_filter=128, stride=2)
             x = resnet_layer(x, kernel_size=3, in_filter=128, out_filter=128, stride=1)
-            x = resnet_layer(x, kernel_size=3, in_filter=128, out_filter=128, stride=1)
-            x = resnet_layer(x, kernel_size=3, in_filter=128, out_filter=128, stride=1)
 
         with tf.name_scope('stage3'):
-            x = resnet_layer(x, kernel_size=3, in_filter=128, out_filter=256, stride=2)
-            x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
-            x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
+            x = resnet_layer(x, kernel_size=3, in_filter=128, out_filter=256, stride=1)
             x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
 
         with tf.name_scope('stage4'):
             x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
             x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
-            x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
-            x = resnet_layer(x, kernel_size=3, in_filter=256, out_filter=256, stride=1)
 
         with tf.name_scope('feature'):
-            x = self._conv(x, kernel_size=1, filters=64, strides=1)
+            x = resnet_layer(x, kernel_size=1, in_filter=256, out_filter=64, stride=1)
+            #x = self._conv(x, kernel_size=1, filters=64, strides=1)
 
         return x

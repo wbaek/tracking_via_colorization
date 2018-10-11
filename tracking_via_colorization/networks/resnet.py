@@ -185,7 +185,7 @@ class ResNet():
             padding=padding,
             use_bias=False,
             data_format=self._data_format,
-            kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=math.sqrt(2.0 / (kernel_size * kernel_size * in_channels * filters)))
+            kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=math.sqrt(2.0 / (kernel_size * kernel_size * in_channels)))
         )
 
     def _batch_norm(self, x):

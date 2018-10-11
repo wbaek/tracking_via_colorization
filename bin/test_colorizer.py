@@ -16,17 +16,8 @@ from tracking_via_colorization.config import Config
 from tracking_via_colorization.feeder.dataset import Kinetics, Davis
 from tracking_via_colorization.networks.colorizer import Colorizer
 from tracking_via_colorization.networks.resnet_colorizer import ResNetColorizer
+from tracking_via_colorization.utils.image_process import ImageProcess
 
-def get_resize(small_axis=256):
-    def _resize(images):
-        for image in images:
-            height, width = image.shape[:2]
-            aspect_ratio = 1.0 * width / height
-            width = int(small_axis if aspect_ratio <= 1.0 else (small_axis * aspect_ratio))
-            height = int(small_axis if aspect_ratio >= 1.0 else (small_axis / aspect_ratio))
-            cv2.resize(image, (width, height))
-        return images
-    return _resize
 
 def dataflow(name='davis', scale=1):
     if name == 'davis':
@@ -46,7 +37,7 @@ def dataflow(name='davis', scale=1):
     ])
     size = (256 * scale, 256 * scale)
 
-    ds = df.MapDataComponent(ds, get_resize(256 * scale), index=1)
+    ds = df.MapDataComponent(ds, ImageProcess.resize(small_axis=256 * scale), index=1)
     ds = df.MapDataComponent(ds, lambda images: cv2.resize(images[0], size), index=2)
 
     ds = df.MapData(ds, lambda dp: [

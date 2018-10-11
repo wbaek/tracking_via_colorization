@@ -29,7 +29,7 @@ class Colorizer():
 
             num_labels = kwargs.get('num_labels', 16)
             num_reference = kwargs.get('num_reference', 3)
-            predict_backward = 'backward' == kwargs.get('predict_direction', 'backward')
+            predict_backward = kwargs.get('predict_direction', 'backward') == 'backward'
 
             with tf.variable_scope(name, reuse=False):  # tf.AUTO_REUSE):
                 with tf.name_scope('network') as name_scope:
@@ -69,7 +69,6 @@ class Colorizer():
                         'metrics/loss_total': tf.metrics.mean(total_loss),
                     }
 
-            '''
             with tf.name_scope('summaries'):
                 for weight, gradient in zip(weights, gradients):
                     variable_name = weight.name.replace(':', '_')
@@ -77,7 +76,7 @@ class Colorizer():
                         continue
                     tf.summary.histogram(variable_name, weight)
                     tf.summary.histogram(variable_name + '/gradients', gradient)
-            # '''
+
             for key, value in metrics.items():
                 tf.summary.scalar(key, value[1])
 

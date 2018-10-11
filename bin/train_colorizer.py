@@ -15,11 +15,16 @@ from tracking_via_colorization.config import Config
 from tracking_via_colorization.feeder.dataset.kinetics import Kinetics
 from tracking_via_colorization.networks.colorizer import Colorizer
 from tracking_via_colorization.networks.resnet_colorizer import ResNetColorizer
+from tracking_via_colorization.utils.image_process import ImageProcess
 
 
 def dataflow(centroids, num_reference=3, num_process=16, shuffle=True):
     ds = Kinetics('/data/public/rw/datasets/videos/kinetics', num_frames=num_reference + 1, skips=[0, 4, 4, 8][:num_reference + 1], shuffle=shuffle)
-    ds = df.MapDataComponent(ds, lambda images: [cv2.resize(image, (256, 256)) for image in images], index=1)
+
+    ds = df.MapDataComponent(ds, ImageProcess.resize(small_axis=256), index=1)
+    ds = df.MapDataComponent(ds, ImageProcess.crop(shape=(256, 256)), index=1)
+    #ds = df.MapDataComponent(ds, lambda images: [cv2.resize(image, (256, 256)) for image in images], index=1)
+
     ds = df.MapData(ds, lambda dp: [dp[1][:num_reference], copy.deepcopy(dp[1][:num_reference]), dp[1][num_reference:], copy.deepcopy(dp[1][num_reference:])])
 
     # for images (ref, target)
@@ -65,8 +70,16 @@ def main(args):
     num_labels = loaded_centroids.shape[0]
 
     input_functions = {
-        'train': get_input_fn('train', loaded_centroids, Config.get_instance()['mode']['train']['batch_size'], num_reference=args.num_reference, num_process=args.num_process),
-        'eval': get_input_fn('test', loaded_centroids, Config.get_instance()['mode']['eval']['batch_size'], num_reference=args.num_reference, num_process=max(1, args.num_process // 4))
+        'train': get_input_fn(
+            'train', loaded_centroids,
+            Config.get_instance()['mode']['train']['batch_size'],
+            num_reference=args.num_reference, num_process=args.num_process
+        ),
+        'eval': get_input_fn(
+            'test', loaded_centroids,
+            Config.get_instance()['mode']['eval']['batch_size'],
+            num_reference=args.num_reference, num_process=max(1, args.num_process // 4)
+        )
     }
 
     model_fn = Colorizer.get('resnet', ResNetColorizer, log_steps=1, num_reference=args.num_reference, num_labels=num_labels, predict_direction=args.direction)

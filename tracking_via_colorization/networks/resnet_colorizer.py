@@ -10,8 +10,8 @@ class ResNetColorizer(ResNet):
         super(ResNetColorizer, self).__init__(is_training, data_format, batch_norm_decay, batch_norm_epsilon)
 
     def forward(self, images, labels,
-        temperature=1.0, num_labels=16, num_reference=3, predict_backward=True,
-        input_data_format='channels_last'):
+                temperature=1.0, num_labels=16, num_reference=3, predict_backward=True,
+                input_data_format='channels_last'):
         # images [BATCH, 4, HEIGHT(256), WIDTH(256), CHANNEL(1)]
         # labels [BATCH, 4, HEIGHT(32), WIDTH(32), CHANNEL(1)]
         # features [BATCH * 4, HEIGHT(32), WIDTH(32), CHANNEL(64)]

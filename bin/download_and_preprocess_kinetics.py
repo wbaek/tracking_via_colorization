@@ -63,7 +63,7 @@ def main(args):
                 ]
                 logging.info(' '.join(command))
                 os.system(' '.join(command))
-                time.sleep(2)
+                time.sleep(1.5)
             except Exception as e:
                 logging.error('error with %s video', key)
                 logging.error('%s: %s', type(e), str(e))

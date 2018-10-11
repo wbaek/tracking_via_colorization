@@ -9,13 +9,13 @@ from tracking_via_colorization.feeder.dataset import Davis
 
 def test_davis():
     davis = Davis('/data/public/rw/datasets/videos/davis/trainval')
-    assert davis.size() == 60
+    assert davis.size() == 6000
     assert davis.names[:5] == ['bear', 'bmx-bumps', 'boat', 'boxing-fisheye', 'breakdance-flare']
     assert davis.names[-5:] == ['train', 'tuk-tuk', 'upside-down', 'varanus-cage', 'walking']
 
 def test_davis_shuffle():
     davis = Davis('/data/public/rw/datasets/videos/davis/trainval', shuffle=True)
-    assert davis.size() == 60
+    assert davis.size() == 6000
     assert davis.names[:5] != ['bear', 'bmx-bumps', 'boat', 'boxing-fisheye', 'breakdance-flare']
     assert davis.names[-5:] != ['train', 'tuk-tuk', 'upside-down', 'varanus-cage', 'walking']
 
